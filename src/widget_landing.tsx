@@ -27,41 +27,51 @@ const REPORT_RAW = 19;
 const REPORT_BASELINE = 20;
 const REPORT_FPS = 120;
 
+enum State {
+  idle = "IDLE",
+  selected = "SELECTED",
+  collecting = "COLLECTING",
+  collected_valid = "COLLECTED_VALID",
+  collected_invalid = "COLLECTED_INVALID",
+  uploading = "UPLOADING",
+  uploaded = "UPLOADED"
+}
+
 type TransitionType = {
-  [T: string]: string;
+  [T: string]: State;
 };
 
 type StateType = {
-  [T: string]: TransitionType;
+  [key in State]: TransitionType;
 };
 
 const NEXT_STATE_GRAPH: StateType = {
-  idle: {
-    SELECT: "selected"
+  [State.idle]: {
+    SELECT: State.selected
   },
-  selected: {
-    SELECT: "selected",
-    COLLECT: "collecting"
+  [State.selected]: {
+    SELECT: State.selected,
+    COLLECT: State.collecting
   },
-  collecting: {
-    STOP_VALID: "collected_valid",
-    STOP_INVALID: "collected_invalid"
+  [State.collecting]: {
+    STOP_VALID: State.collected_valid,
+    STOP_INVALID: State.collected_invalid
   },
-  collected_valid: {
-    SELECT: "selected",
-    CANCEL: "selected",
-    UPLOAD: "uploading"
+  [State.collected_valid]: {
+    SELECT: State.selected,
+    CANCEL: State.selected,
+    UPLOAD: State.uploading
   },
-  collected_invalid: {
-    SELECT: "selected",
-    COLLECT: "collecting"
+  [State.collected_invalid]: {
+    SELECT: State.selected,
+    COLLECT: State.collecting
   },
-  uploading: {
-    UPLOADED: "uploaded"
+  [State.uploading]: {
+    UPLOADED: State.uploaded
   },
-  uploaded: {
-    SELECT: "selected",
-    DONE: "selected"
+  [State.uploaded]: {
+    SELECT: State.selected,
+    DONE: State.selected
   }
 };
 
@@ -122,13 +132,13 @@ const setReport = async (
   return Promise.resolve();
 };
 
-const reducer = (state: string, action: string) => {
+const reducer = (state: State, action: string) => {
   const nextState = NEXT_STATE_GRAPH[state][action];
   return nextState !== undefined ? nextState : state;
 };
 
 export const Landing = (props: any): JSX.Element => {
-  const [state, dispatch] = useReducer(reducer, "idle");
+  const [state, dispatch] = useReducer(reducer, State.idle);
   const [test, setTest] = useState<any>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [listRightPdding, setListRightPadding] = useState(0);
@@ -178,7 +188,7 @@ export const Landing = (props: any): JSX.Element => {
   };
 
   const handleListItemClick = (item: any) => {
-    if (state === "collecting" || state === "uploading") {
+    if (state === State.collecting || state === State.uploading) {
       return;
     }
     if (test && test.id === item.id) {
@@ -191,27 +201,27 @@ export const Landing = (props: any): JSX.Element => {
   const generateMessage = (): JSX.Element => {
     let message: string;
     switch (state) {
-      case "idle":
+      case State.idle:
         message = "Select Test Case";
         break;
-      case "selected":
+      case State.selected:
         message = test.title;
         break;
-      case "collecting":
+      case State.collecting:
         message = "Collecting...";
         break;
-      case "collected_valid":
-      case "collected_invalid":
+      case State.collected_valid:
+      case State.collected_invalid:
         if (collectedData.length > 1) {
           message = `${collectedData.length} Frames Collected`;
         } else {
           message = `${collectedData.length} Frame Collected`;
         }
         break;
-      case "uploading":
+      case State.uploading:
         message = "Uploading...";
         break;
-      case "uploaded":
+      case State.uploaded:
         if (collectedData.length > 1) {
           message = `${collectedData.length} Frames Uploaded`;
         } else {
@@ -243,15 +253,16 @@ export const Landing = (props: any): JSX.Element => {
               <ListItemText primary={item.title} />
             </ListItemButton>
           </ListItem>
-          {selected && (state === "collecting" || state === "uploading") && (
-            <LinearProgress
-              sx={{
-                position: "absolute",
-                bottom: "0px",
-                width: "100%"
-              }}
-            />
-          )}
+          {selected &&
+            (state === State.collecting || state === State.uploading) && (
+              <LinearProgress
+                sx={{
+                  position: "absolute",
+                  bottom: "0px",
+                  width: "100%"
+                }}
+              />
+            )}
         </div>
       );
     });
@@ -259,19 +270,19 @@ export const Landing = (props: any): JSX.Element => {
 
   const generateControls = (): JSX.Element => {
     switch (state) {
-      case "idle":
-      case "selected":
-      case "collected_invalid":
+      case State.idle:
+      case State.selected:
+      case State.collected_invalid:
         return (
           <Button
-            disabled={state === "idle"}
+            disabled={state === State.idle}
             onClick={() => handleCollectButtonClick()}
             sx={{ width: "150px" }}
           >
             Collect
           </Button>
         );
-      case "collecting":
+      case State.collecting:
         return (
           <Button
             onClick={() => handleStopButtonClick()}
@@ -280,13 +291,13 @@ export const Landing = (props: any): JSX.Element => {
             Stop
           </Button>
         );
-      case "collected_valid":
-      case "uploading":
+      case State.collected_valid:
+      case State.uploading:
         return (
           <Stack spacing={2} direction="row">
             <Stack>
               <Button
-                disabled={state === "uploading"}
+                disabled={state === State.uploading}
                 onClick={() => handleCancelButtonClick()}
                 sx={{
                   width: "150px"
@@ -297,7 +308,7 @@ export const Landing = (props: any): JSX.Element => {
             </Stack>
             <Stack>
               <Button
-                disabled={state === "uploading"}
+                disabled={state === State.uploading}
                 onClick={() => handleUploadButtonClick()}
                 sx={{
                   width: "150px"
@@ -308,7 +319,7 @@ export const Landing = (props: any): JSX.Element => {
             </Stack>
           </Stack>
         );
-      case "uploaded":
+      case State.uploaded:
         return (
           <Button
             onClick={() => handleDoneButtonClick()}
@@ -436,10 +447,10 @@ export const Landing = (props: any): JSX.Element => {
           <Button
             variant="text"
             disabled={
-              state === "idle" ||
-              state === "collecting" ||
-              state === "uploading" ||
-              state === "collected_invalid"
+              state === State.idle ||
+              state === State.collecting ||
+              state === State.uploading ||
+              state === State.collected_invalid
             }
             onClick={() => handleStepsViewButtonClick()}
             sx={{
@@ -453,40 +464,36 @@ export const Landing = (props: any): JSX.Element => {
               variant="body2"
               sx={{
                 color:
-                  state === "idle" ||
-                  state === "collecting" ||
-                  state === "uploading" ||
-                  state === "collected_invalid"
+                  state === State.idle ||
+                  state === State.collecting ||
+                  state === State.uploading ||
+                  state === State.collected_invalid
                     ? "colors.grey"
                     : props.service.ui.getJupyterFontColor(),
                 textDecoration: "underline"
               }}
             >
-              {state === "idle" ||
-              state === "selected" ||
-              state === "collecting"
+              {state === State.idle ||
+              state === State.selected ||
+              state === State.collecting
                 ? "Test Steps"
                 : "View Last Frame"}
             </Typography>
           </Button>
         </Box>
       </Stack>
-      {state !== "idle" && (
+      {state !== State.idle && (
         <Dialog
           fullWidth
           maxWidth={
-            state === "idle" || state === "selected" || state === "collecting"
-              ? "xs"
-              : "md"
+            state === State.selected || state === State.collecting ? "xs" : "md"
           }
           open={openDialog}
           onClose={handleDialogClose}
         >
           <DialogTitle sx={{ textAlign: "center" }}>{test.title}</DialogTitle>
           <DialogContent>
-            {state === "idle" ||
-            state === "selected" ||
-            state === "collecting" ? (
+            {state === State.selected || state === State.collecting ? (
               <List dense>{generateTestSteps()}</List>
             ) : (
               collectedData.length > 0 && (
