@@ -12,7 +12,30 @@ import { WebDSService } from "@webds/service";
 
 import { Landing } from "./widget_landing";
 
-const testRailURL = "http://nexus.synaptics.com:8083/TestRail/";
+import { Playback } from "./widget_playback";
+
+import { requestAPI } from "./handler";
+
+export enum Page {
+  Landing = "LANDING",
+  Playback = "PLAYBACK"
+}
+
+export type Report = {
+  image: number[][];
+  hybridx: number[];
+  hybridy: number[];
+};
+
+export type RecordedData = {
+  data: Report[];
+};
+
+export const RecordedDataContext = React.createContext({} as RecordedData);
+
+export const selectFile: any = null;
+
+const TESTRAIL_URL = "http://nexus.synaptics.com:8083/TestRail/";
 
 const WIDTH = 800;
 const HEIGHT_TITLE = 70;
@@ -28,29 +51,40 @@ const dimensions = {
 
 let alertMessage = "";
 
-const testRailRequest = async (
+const alertMessageAppInfo = "Failed to read application info from device.";
+
+const alertMessageRetrieveCfg = "Failed to retrieve cfg file.";
+
+const alertMessageSuiteIDInCfg = "Suite ID not available in cfg file.";
+
+const alertMessageRetrieveTestCases = "Failed to retrieve tests cases.";
+
+export const testRailRequest = async (
   endpoint: string,
   method: string,
   body: any = null
 ): Promise<any> => {
   const requestHeaders: HeadersInit = new Headers();
-  requestHeaders.set("Content-Type", "application/json");
+  if (body && !(body instanceof FormData)) {
+    body = JSON.stringify(body);
+    requestHeaders.set("Content-Type", "application/json");
+  }
 
-  const request = new Request(testRailURL + endpoint, {
-    method: method,
+  const request = new Request(TESTRAIL_URL + endpoint, {
+    method,
     mode: "cors",
     headers: requestHeaders,
     referrerPolicy: "no-referrer",
-    body: body ? JSON.stringify(body) : null
+    body
   });
 
   let response: Response;
   try {
     response = await fetch(request);
   } catch (error) {
-    console.error(`Error - ${method} ${testRailURL + endpoint}\n${error}`);
+    console.error(`Error - ${method} ${TESTRAIL_URL + endpoint}\n${error}`);
     return Promise.reject(
-      `Failed to get response from ${testRailURL + endpoint}`
+      `Failed to get response from ${TESTRAIL_URL + endpoint}`
     );
   }
 
@@ -60,26 +94,128 @@ const testRailRequest = async (
     try {
       data = JSON.parse(data);
     } catch {
-      console.log(`Not JSON response body from ${testRailURL + endpoint}`);
+      console.log(`Not JSON response body from ${TESTRAIL_URL + endpoint}`);
     }
   }
 
   if (!response.ok) {
     return Promise.reject(
-      `Received status ${response.status} from ${testRailURL + endpoint}`
+      `Received status ${response.status} from ${TESTRAIL_URL + endpoint}`
     );
   }
 
   return data;
 };
 
+const getTestCases = async (suiteID: number): Promise<any[]> => {
+  let projectID: number;
+  try {
+    const endpoint = "get_suite/" + suiteID;
+    const response = await testRailRequest(endpoint, "GET");
+    projectID = response.project_id;
+    console.log(`Project ID: ${projectID}`);
+  } catch (error) {
+    Promise.reject(error);
+  }
+
+  const sectionIDs: number[] = [];
+  try {
+    const endpoint = "get_sections/" + projectID! + "&suite_id=" + suiteID;
+    const response = await testRailRequest(endpoint, "GET");
+    console.log(response);
+    const ifpSection = response.sections.find((item: any) => {
+      return item.name.toLowerCase() === "ifp";
+    });
+    if (ifpSection) {
+      response.sections.forEach((item: any) => {
+        if (item.parent_id === ifpSection.id) {
+          sectionIDs.push(item.id);
+        }
+      });
+    }
+  } catch (error) {
+    Promise.reject(error);
+  }
+
+  const testCases: any[] = [];
+  try {
+    const endpoint = "get_cases/" + projectID! + "&suite_id=" + suiteID;
+    const response = await testRailRequest(endpoint, "GET");
+    console.log(response);
+    response.cases.forEach((item: any) => {
+      if (sectionIDs.includes(item.section_id)) {
+        testCases.push(item);
+      }
+    });
+  } catch (error) {
+    Promise.reject(error);
+  }
+
+  return testCases;
+};
+
 const DataCollectionContainer = (props: any): JSX.Element => {
   const [initialized, setInitialized] = useState<boolean>(false);
   const [alert, setAlert] = useState<boolean>(false);
-  const [tests, setTests] = useState<any[]>([]);
+  const [page, setPage] = useState<Page>(Page.Landing);
+  const [colsRows, setColsRows] = useState<[number, number]>([0, 0]);
+  const [testCases, setTestCases] = useState<any[]>([]);
+  const [recordedData, setRecordedData] = useState<RecordedData>({ data: [] });
+
+  const webdsTheme = props.service.ui.getWebDSTheme();
+  const jpFontColor = props.service.ui.getJupyterFontColor();
+
+  const changePage = (newPage: Page) => {
+    setPage(newPage);
+  };
+
+  const displayPage = (): JSX.Element | null => {
+    switch (page) {
+      case Page.Landing:
+        return (
+          <Landing
+            changePage={changePage}
+            dimensions={dimensions}
+            fontColor={jpFontColor}
+            testCases={testCases}
+            setRecordedData={setRecordedData}
+          />
+        );
+      case Page.Playback:
+        return (
+          <Playback
+            changePage={changePage}
+            dimensions={dimensions}
+            numCols={colsRows[0]}
+            numRows={colsRows[1]}
+            fontColor={jpFontColor}
+          />
+        );
+      default:
+        return null;
+    }
+  };
 
   useEffect(() => {
     const initialize = async () => {
+      const dataToSend: any = {
+        command: "getAppInfo"
+      };
+      try {
+        const response = await requestAPI<any>("command", {
+          body: JSON.stringify(dataToSend),
+          method: "POST"
+        });
+        if (response.numCols && response.numRows) {
+          setColsRows([response.numCols, response.numRows]);
+        }
+      } catch (error) {
+        console.error(`Error - POST /webds/command\n${dataToSend}\n${error}`);
+        alertMessage = alertMessageAppInfo;
+        setAlert(true);
+        return;
+      }
+
       let suiteID: number;
       try {
         const cfg = await props.service.packrat.fetch.getCfgFile();
@@ -87,62 +223,36 @@ const DataCollectionContainer = (props: any): JSX.Element => {
         const index = cfgSplitted.indexOf(";TEST_SUITE");
         if (index !== -1) {
           suiteID = cfgSplitted[index + 1];
+          suiteID = 1370;
           console.log(`Suite ID: ${suiteID}`);
+        } else {
+          console.error(alertMessageSuiteIDInCfg);
+          alertMessage = alertMessageSuiteIDInCfg;
+          setAlert(true);
+          return;
         }
       } catch (error) {
-        console.error("Failed to fetch cfg file");
+        console.error(`${alertMessageRetrieveCfg}\n${error}`);
+        alertMessage = alertMessageRetrieveCfg;
+        setAlert(true);
         return;
       }
 
-      let projectID: number;
       try {
-        const endpoint = "get_suite/" + suiteID!;
-        const suite = await testRailRequest(endpoint, "GET");
-        projectID = suite.project_id;
-        console.log(`Project ID: ${projectID}`);
+        const testCases = await getTestCases(suiteID!);
+        setTestCases(testCases);
       } catch (error) {
-        console.error(error);
+        console.error(`${alertMessageRetrieveTestCases}\n${error}`);
+        alertMessage = alertMessageRetrieveTestCases;
+        setAlert(true);
         return;
       }
-
-      const sectionIDs: number[] = [];
-      try {
-        const endpoint = "get_sections/" + projectID! + "&suite_id=" + suiteID!;
-        const sections = await testRailRequest(endpoint, "GET");
-        console.log(sections);
-        sections.sections.forEach((item: any) => {
-          if (item.name.toLowerCase().includes("finger")) {
-            sectionIDs.push(item.id);
-          }
-        });
-      } catch (error) {
-        console.error(error);
-        return;
-      }
-
-      const testCases: any[] = [];
-      try {
-        const endpoint = "get_cases/" + projectID! + "&suite_id=" + suiteID!;
-        const cases = await testRailRequest(endpoint, "GET");
-        console.log(cases);
-        cases.cases.forEach((item: any) => {
-          if (sectionIDs.includes(item.section_id)) {
-            testCases.push(item);
-          }
-        });
-      } catch (error) {
-        console.error(error);
-        return;
-      }
-
-      setTests(testCases);
 
       setInitialized(true);
     };
+
     initialize();
   }, []);
-
-  const webdsTheme = props.service.ui.getWebDSTheme();
 
   return (
     <>
@@ -158,11 +268,9 @@ const DataCollectionContainer = (props: any): JSX.Element => {
             </Alert>
           )}
           {initialized && (
-            <Landing
-              dimensions={dimensions}
-              service={props.service}
-              tests={tests}
-            />
+            <RecordedDataContext.Provider value={recordedData}>
+              {displayPage()}
+            </RecordedDataContext.Provider>
           )}
         </div>
         {!initialized && (

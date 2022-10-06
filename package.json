@@ -61,10 +61,16 @@
     "@jupyterlab/ui-components": "3.4.5",
     "@mui/icons-material": "5.5.1",
     "@mui/material": "5.5.1",
-    "@webds/service": "file:../webds_service"
+    "@webds/service": "file:../webds_service",
+    "plotly.js": "2.14.0",
+    "react-plotly.js": "2.5.1"
   },
   "devDependencies": {
     "@jupyterlab/builder": "^3.1.0",
+    "@types/plotly.js": "^1.54.18",
+    "@types/react": "^17.0.38",
+    "@types/react-dom": "^17.0.11",
+    "@types/react-plotly.js": "^2.5.0",
     "@typescript-eslint/eslint-plugin": "^4.8.1",
     "@typescript-eslint/parser": "^4.8.1",
     "eslint": "^7.14.0",

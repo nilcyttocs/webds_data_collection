@@ -20,7 +20,7 @@ namespace Attributes {
   export const label = "Data Collection";
   export const caption = "Data Collection";
   export const category = "Touch - Assessment";
-  export const rank = 50;
+  export const rank = 40;
 }
 
 /**
