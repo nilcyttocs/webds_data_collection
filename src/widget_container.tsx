@@ -223,7 +223,6 @@ const DataCollectionContainer = (props: any): JSX.Element => {
         const index = cfgSplitted.indexOf(";TEST_SUITE");
         if (index !== -1) {
           suiteID = cfgSplitted[index + 1];
-          suiteID = 1370;
           console.log(`Suite ID: ${suiteID}`);
         } else {
           console.error(alertMessageSuiteIDInCfg);
