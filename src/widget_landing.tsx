@@ -105,11 +105,47 @@ let eventSource: EventSource | undefined;
 let eventData: any;
 
 let collectedData: Report[] = [];
+let staticConfig: any = {};
 
 const initialState: State = State.idle;
 const initialTestCase: any = null;
 let stateStore: State = initialState;
 let testCaseStore: any = initialTestCase;
+
+const readStaticConfig = async () => {
+  staticConfig = {};
+  const dataToSend = {
+    command: "getStaticConfig"
+  };
+  try {
+    staticConfig = await requestAPI<any>("command", {
+      body: JSON.stringify(dataToSend),
+      method: "POST"
+    });
+  } catch (error) {
+    console.error(`Error - POST /webds/command\n${dataToSend}\n${error}`);
+  }
+};
+
+const uploadAttachment = async (
+  testCaseID: number,
+  data: any,
+  fileName: string
+) => {
+  try {
+    const endpoint = "add_attachment_to_case/" + testCaseID;
+    const jsonData = JSON.stringify(data);
+    const blob = new Blob([jsonData], { type: "application/json" });
+    const formData = new FormData();
+    formData.append("attachment", blob, fileName);
+    const attachment = await testRailRequest(endpoint, "POST", formData);
+    console.log(`Attachment ID: ${attachment.attachment_id}`);
+  } catch (error) {
+    console.error(error);
+    Promise.reject("Failed to upload attachment to TestRail");
+    return;
+  }
+};
 
 const eventHandler = (event: any) => {
   const data = JSON.parse(event.data);
@@ -182,9 +218,10 @@ export const Landing = (props: any): JSX.Element => {
     dispatch("COLLECT");
   };
 
-  const handleStopButtonClick = () => {
+  const handleStopButtonClick = async () => {
     removeEvent();
     if (collectedData.length > 0) {
+      await readStaticConfig();
       props.setRecordedData({ data: collectedData });
       dispatch("STOP_VALID");
     } else {
@@ -199,15 +236,18 @@ export const Landing = (props: any): JSX.Element => {
   const handleUploadButtonClick = async () => {
     dispatch("UPLOAD");
     try {
-      const endpoint = "add_attachment_to_case/" + testCase.id;
-      const jsonData = JSON.stringify({
-        data: collectedData
-      });
-      const blob = new Blob([jsonData], { type: "application/json" });
-      const formData = new FormData();
-      formData.append("attachment", blob, DEFAULT_DATA_FILE_NAME);
-      const attachment = await testRailRequest(endpoint, "POST", formData);
-      console.log(`Attachment ID: ${attachment.attachment_id}`);
+      await uploadAttachment(
+        testCase.id,
+        { data: collectedData },
+        DEFAULT_DATA_FILE_NAME
+      );
+    } catch (error) {
+      console.error(error);
+      dispatch("UPLOAD_FAILED");
+      return;
+    }
+    try {
+      await uploadAttachment(testCase.id, staticConfig, "static_config.json");
     } catch (error) {
       console.error(error);
       dispatch("UPLOAD_FAILED");
