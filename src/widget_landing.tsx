@@ -19,7 +19,6 @@ import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import TextField from "@mui/material/TextField";
 
 import {
   Page,
@@ -171,8 +170,6 @@ export const Landing = (props: any): JSX.Element => {
   const [state, dispatch] = useReducer(reducer, stateStore);
   const [testCase, setTestCase] = useState<any>(testCaseStore);
   const [openDialog, setOpenDialog] = useState(false);
-  const [openUploadDialog, setOpenUploadDialog] = useState(false);
-  const [dataFileName, setDataFileName] = useState(DEFAULT_DATA_FILE_NAME);
   const [listRightPdding, setListRightPadding] = useState(0);
 
   const recordedData = useContext(RecordedDataContext);
@@ -199,9 +196,24 @@ export const Landing = (props: any): JSX.Element => {
     dispatch("CANCEL");
   };
 
-  const handleUploadButtonClick = () => {
-    setDataFileName(DEFAULT_DATA_FILE_NAME);
-    setOpenUploadDialog(true);
+  const handleUploadButtonClick = async () => {
+    dispatch("UPLOAD");
+    try {
+      const endpoint = "add_attachment_to_case/" + testCase.id;
+      const jsonData = JSON.stringify({
+        data: collectedData
+      });
+      const blob = new Blob([jsonData], { type: "application/json" });
+      const formData = new FormData();
+      formData.append("attachment", blob, DEFAULT_DATA_FILE_NAME);
+      const attachment = await testRailRequest(endpoint, "POST", formData);
+      console.log(`Attachment ID: ${attachment.attachment_id}`);
+    } catch (error) {
+      console.error(error);
+      dispatch("UPLOAD_FAILED");
+      return;
+    }
+    dispatch("UPLOADED");
   };
 
   const handleDoneButtonClick = () => {
@@ -224,56 +236,6 @@ export const Landing = (props: any): JSX.Element => {
 
   const handleDialogOkayButtonClick = () => {
     handleDialogClose();
-  };
-
-  const handleUploadDialogClose = () => {
-    setOpenUploadDialog(false);
-  };
-
-  const handleUploadDialogCancelButtonClick = () => {
-    handleUploadDialogClose();
-  };
-
-  const handleUploadDialogUploadButtonClick = async () => {
-    const fileName = dataFileName;
-    handleUploadDialogClose();
-    dispatch("UPLOAD");
-    try {
-      const endpoint = "add_attachment_to_case/" + testCase.id;
-      const jsonData = JSON.stringify({
-        data: collectedData
-      });
-      const blob = new Blob([jsonData], { type: "application/json" });
-      const formData = new FormData();
-      formData.append("attachment", blob, fileName);
-      const attachment = await testRailRequest(endpoint, "POST", formData);
-      console.log(`Attachment ID: ${attachment.attachment_id}`);
-    } catch (error) {
-      console.error(error);
-      dispatch("UPLOAD_FAILED");
-      return;
-    }
-    dispatch("UPLOADED");
-  };
-
-  const handleTextFieldChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setDataFileName(event.target.value);
-  };
-
-  const handleTextFieldKeyDown = (
-    event: React.KeyboardEvent<HTMLDivElement>
-  ) => {
-    if (event.keyCode === 13) {
-      if (event.preventDefault) {
-        event.preventDefault();
-      }
-      if (event.stopPropagation) {
-        event.stopPropagation();
-      }
-      handleUploadDialogUploadButtonClick();
-    }
   };
 
   const handleTestRailButtonClick = (testCaseID: number) => {
@@ -627,80 +589,37 @@ export const Landing = (props: any): JSX.Element => {
         </Box>
       </Stack>
       {state !== State.idle && (
-        <>
-          <Dialog
-            fullWidth
-            maxWidth={
-              state === State.selected || state === State.collecting
-                ? "xs"
-                : "md"
-            }
-            open={openDialog}
-            onClose={handleDialogClose}
-          >
-            <DialogTitle sx={{ textAlign: "center" }}>
-              {testCase.title}
-            </DialogTitle>
-            <DialogContent>
-              {state === State.selected || state === State.collecting ? (
-                <List dense>{generateTestSteps()}</List>
-              ) : (
-                collectedData.length > 0 && (
-                  <Typography variant="body2">
-                    {JSON.stringify(collectedData[collectedData.length - 1])}
-                  </Typography>
-                )
-              )}
-            </DialogContent>
-            <DialogActions>
-              <Button
-                onClick={handleDialogOkayButtonClick}
-                sx={{ width: "100px" }}
-              >
-                Okay
-              </Button>
-            </DialogActions>
-          </Dialog>
-          <Dialog
-            fullWidth
-            maxWidth="xs"
-            open={openUploadDialog}
-            onClose={handleUploadDialogClose}
-          >
-            <DialogTitle sx={{ textAlign: "center" }}>
-              {testCase.title}
-            </DialogTitle>
-            <DialogContent>
-              <TextField
-                fullWidth
-                variant="standard"
-                label="Name of Data File"
-                type="text"
-                value={dataFileName}
-                onChange={handleTextFieldChange}
-                onKeyDown={handleTextFieldKeyDown}
-                InputLabelProps={{
-                  shrink: true
-                }}
-              />
-            </DialogContent>
-            <DialogActions>
-              <Button
-                onClick={() => handleUploadDialogCancelButtonClick()}
-                sx={{ width: "100px" }}
-              >
-                Cancel
-              </Button>
-              <Button
-                disabled={dataFileName === ""}
-                onClick={() => handleUploadDialogUploadButtonClick()}
-                sx={{ width: "100px" }}
-              >
-                Upload
-              </Button>
-            </DialogActions>
-          </Dialog>
-        </>
+        <Dialog
+          fullWidth
+          maxWidth={
+            state === State.selected || state === State.collecting ? "xs" : "md"
+          }
+          open={openDialog}
+          onClose={handleDialogClose}
+        >
+          <DialogTitle sx={{ textAlign: "center" }}>
+            {testCase.title}
+          </DialogTitle>
+          <DialogContent>
+            {state === State.selected || state === State.collecting ? (
+              <List dense>{generateTestSteps()}</List>
+            ) : (
+              collectedData.length > 0 && (
+                <Typography variant="body2">
+                  {JSON.stringify(collectedData[collectedData.length - 1])}
+                </Typography>
+              )
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={handleDialogOkayButtonClick}
+              sx={{ width: "100px" }}
+            >
+              Okay
+            </Button>
+          </DialogActions>
+        </Dialog>
       )}
     </>
   );
