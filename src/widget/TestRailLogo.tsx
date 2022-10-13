@@ -1,6 +1,6 @@
 import React from "react";
 
-export const TestRailIcon = (props: any): JSX.Element => {
+export const TestRailLogo = (props: any): JSX.Element => {
   return (
     <svg
       width="23px"
@@ -68,3 +68,5 @@ export const TestRailIcon = (props: any): JSX.Element => {
     </svg>
   );
 };
+
+export default TestRailLogo;

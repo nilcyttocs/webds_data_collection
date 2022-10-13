@@ -12,7 +12,7 @@ import { WebDSService, WebDSWidget } from "@webds/service";
 
 import { dataCollectionIcon } from "./icons";
 
-import { DataCollectionWidget } from "./widget_container";
+import DataCollectionWidget from "./widget/DataCollectionWidget";
 
 namespace Attributes {
   export const command = "webds_data_collection:open";

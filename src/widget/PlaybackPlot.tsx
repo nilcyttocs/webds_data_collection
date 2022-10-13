@@ -5,7 +5,11 @@ import LinearProgress from "@mui/material/LinearProgress";
 
 import Plot from "react-plotly.js";
 
-import { RecordedData, RecordedDataContext, Report } from "./widget_container";
+import {
+  RecordedData,
+  RecordedDataContext,
+  Report
+} from "./DataCollectionComponent";
 
 const HEAT_PLOT_WIDTH = 550;
 const BAR_PLOT_HEIGHT = 60;
@@ -109,7 +113,7 @@ const computePlot = (frame: Report) => {
   barYMax = Math.max.apply(Math, barY);
 };
 
-const HeatmapPlayback = (props: any): JSX.Element | null => {
+export const PlaybackPlot = (props: any): JSX.Element | null => {
   const [initialized, setInitialized] = useState<boolean>(false);
 
   const [heatData, setHeatData] = useState<any>([]);
@@ -413,7 +417,7 @@ const HeatmapPlayback = (props: any): JSX.Element | null => {
   ) : null;
 };
 
-export const HeatmapPlaybackSlider = (props: any): JSX.Element => {
+export const PlaybackSlider = (props: any): JSX.Element => {
   const [index, setIndex] = useState<number>(frameIndex + 1);
 
   const changeIndex = (event: any) => {
@@ -439,7 +443,7 @@ export const HeatmapPlaybackSlider = (props: any): JSX.Element => {
   );
 };
 
-export const HeatmapPlaybackProgress = (props: any): JSX.Element => {
+export const PlaybackProgress = (props: any): JSX.Element => {
   const [progress, setProgress] = useState<number>(
     Math.ceil((progressIndex * 100) / numFrames)
   );
@@ -458,4 +462,4 @@ export const HeatmapPlaybackProgress = (props: any): JSX.Element => {
   return <LinearProgress variant="determinate" value={progress} />;
 };
 
-export default HeatmapPlayback;
+export default PlaybackPlot;

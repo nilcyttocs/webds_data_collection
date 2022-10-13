@@ -11,12 +11,9 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 
 import { styled } from "@mui/material/styles";
 
-import { Page, selectFile } from "./widget_container";
+import { Page, selectFile } from "./DataCollectionComponent";
 
-import HeatmapPlayback, {
-  HeatmapPlaybackProgress,
-  HeatmapPlaybackSlider
-} from "./heatmap_playback";
+import PlaybackPlot, { PlaybackProgress, PlaybackSlider } from "./PlaybackPlot";
 
 const showHelp = false;
 
@@ -99,7 +96,7 @@ export const Playback = (props: any): JSX.Element => {
             justifyContent: "center"
           }}
         >
-          <HeatmapPlayback
+          <PlaybackPlot
             run={run}
             setRun={setRun}
             numCols={props.numCols}
@@ -143,11 +140,11 @@ export const Playback = (props: any): JSX.Element => {
               )}
               {run ? (
                 <div style={{ width: "100%", paddingTop: "18px" }}>
-                  <HeatmapPlaybackProgress sync={sync} />
+                  <PlaybackProgress sync={sync} />
                 </div>
               ) : (
                 <div style={{ width: "100%", paddingTop: "5px" }}>
-                  <HeatmapPlaybackSlider sync={sync} />
+                  <PlaybackSlider sync={sync} />
                 </div>
               )}
             </Stack>
@@ -178,3 +175,5 @@ export const Playback = (props: any): JSX.Element => {
     </>
   );
 };
+
+export default Playback;

@@ -25,11 +25,11 @@ import {
   RecordedDataContext,
   Report,
   testRailRequest
-} from "./widget_container";
+} from "./DataCollectionComponent";
 
-import { TestRailIcon } from "./testrail_logo";
+import TestRailLogo from "./TestRailLogo";
 
-import { requestAPI } from "./handler";
+import { requestAPI } from "../handler";
 
 enum State {
   idle = "IDLE",
@@ -354,7 +354,7 @@ export const Landing = (props: any): JSX.Element => {
                 onClick={() => handleTestRailButtonClick(item.id)}
               >
                 <SvgIcon>
-                  <TestRailIcon />
+                  <TestRailLogo />
                 </SvgIcon>
               </IconButton>
             }
@@ -664,3 +664,5 @@ export const Landing = (props: any): JSX.Element => {
     </>
   );
 };
+
+export default Landing;
