@@ -20,16 +20,15 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 
-import {
-  Page,
-  RecordedDataContext,
-  Report,
-  testRailRequest
-} from "./DataCollectionComponent";
+import { TouchcommReport } from "@webds/service";
+
+import { Page, testRailRequest } from "./DataCollectionComponent";
 
 import TestRailLogo from "./TestRailLogo";
 
 import { requestAPI } from "../handler";
+
+import { RecordedDataContext } from "../local_exports";
 
 enum State {
   idle = "IDLE",
@@ -104,7 +103,7 @@ const showHelp = false;
 let eventSource: EventSource | undefined;
 let eventData: any;
 
-let collectedData: Report[] = [];
+let collectedData: TouchcommReport[] = [];
 let staticConfig: any = {};
 
 const initialState: State = State.idle;

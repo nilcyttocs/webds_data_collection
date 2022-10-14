@@ -3,13 +3,11 @@ import React, { useContext, useEffect, useState } from "react";
 import Slider from "@mui/material/Slider";
 import LinearProgress from "@mui/material/LinearProgress";
 
+import { TouchcommReport } from "@webds/service";
+
 import Plot from "react-plotly.js";
 
-import {
-  RecordedData,
-  RecordedDataContext,
-  Report
-} from "./DataCollectionComponent";
+import { RecordedData, RecordedDataContext } from "../local_exports";
 
 const HEAT_PLOT_WIDTH = 550;
 const BAR_PLOT_HEIGHT = 60;
@@ -88,7 +86,7 @@ const stopProgressAnimation = () => {
   }
 };
 
-const computePlot = (frame: Report) => {
+const computePlot = (frame: TouchcommReport) => {
   heatZ = frame.image;
   barX = frame.hybridx;
   barY = frame.hybridy;

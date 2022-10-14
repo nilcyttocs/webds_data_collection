@@ -6,6 +6,8 @@ import CircularProgress from "@mui/material/CircularProgress";
 
 import { ThemeProvider } from "@mui/material/styles";
 
+import { TouchcommReport } from "@webds/service";
+
 import Landing from "./Landing";
 
 import Playback from "./Playback";
@@ -17,14 +19,8 @@ export enum Page {
   Playback = "PLAYBACK"
 }
 
-export type Report = {
-  image: number[][];
-  hybridx: number[];
-  hybridy: number[];
-};
-
 export type RecordedData = {
-  data: Report[];
+  data: TouchcommReport[];
 };
 
 export const RecordedDataContext = React.createContext({} as RecordedData);
