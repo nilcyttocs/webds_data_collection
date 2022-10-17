@@ -1,1 +1,1 @@
-../../../webds_heatmap/src/widget/PlaybackPlot.tsx
+../../../webds_component_lib/plotting/adc/PlaybackPlot.tsx
