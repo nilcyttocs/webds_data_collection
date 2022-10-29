@@ -155,7 +155,6 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
   const [recordedData, setRecordedData] = useState<RecordedData>({ data: [] });
 
   const webdsTheme = props.service.ui.getWebDSTheme();
-  const jpFontColor = props.service.ui.getJupyterFontColor();
 
   const changePage = (newPage: Page) => {
     setPage(newPage);
@@ -168,7 +167,6 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
           <Landing
             changePage={changePage}
             dimensions={dimensions}
-            fontColor={jpFontColor}
             testCases={testCases}
             setRecordedData={setRecordedData}
           />
@@ -180,7 +178,6 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
             dimensions={dimensions}
             numCols={colsRows[0]}
             numRows={colsRows[1]}
-            fontColor={jpFontColor}
           />
         );
       default:

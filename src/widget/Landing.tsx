@@ -20,6 +20,8 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 
+import { useTheme } from "@mui/material/styles";
+
 import { TouchcommReport } from "@webds/service";
 
 import { Page, testRailRequest } from "./DataCollectionComponent";
@@ -208,6 +210,8 @@ export const Landing = (props: any): JSX.Element => {
   const [listRightPdding, setListRightPadding] = useState(0);
 
   const recordedData = useContext(RecordedDataContext);
+
+  const theme = useTheme();
 
   const handleCollectButtonClick = async () => {
     await setReport(
@@ -489,7 +493,7 @@ export const Landing = (props: any): JSX.Element => {
             width: props.dimensions.width + "px",
             height: props.dimensions.heightTitle + "px",
             position: "relative",
-            bgcolor: "section.main"
+            bgcolor: "section.background"
           }}
         >
           <Typography
@@ -513,9 +517,7 @@ export const Landing = (props: any): JSX.Element => {
                 transform: "translate(0%, -50%)"
               }}
             >
-              <Typography variant="body2" sx={{ textDecoration: "underline" }}>
-                Help
-              </Typography>
+              <Typography variant="underline">Help</Typography>
             </Button>
           )}
         </Box>
@@ -526,7 +528,7 @@ export const Landing = (props: any): JSX.Element => {
             boxSizing: "border-box",
             padding: "24px",
             position: "relative",
-            bgcolor: "section.main",
+            bgcolor: "section.background",
             display: "flex",
             flexDirection: "column"
           }}
@@ -555,7 +557,7 @@ export const Landing = (props: any): JSX.Element => {
             boxSizing: "border-box",
             padding: "24px",
             position: "relative",
-            bgcolor: "section.main",
+            bgcolor: "section.background",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -581,13 +583,12 @@ export const Landing = (props: any): JSX.Element => {
                 onClick={() => handlePlaybackButtonClick()}
               >
                 <Typography
-                  variant="body2"
+                  variant="underline"
                   sx={{
                     color:
                       state === State.uploading
-                        ? "colors.grey"
-                        : props.fontColor,
-                    textDecoration: "underline"
+                        ? theme.palette.text.disabled
+                        : theme.palette.text.primary
                   }}
                 >
                   Playback
@@ -605,16 +606,15 @@ export const Landing = (props: any): JSX.Element => {
               onClick={() => handleOpenDialogButtonClick()}
             >
               <Typography
-                variant="body2"
+                variant="underline"
                 sx={{
                   color:
                     state === State.idle ||
                     state === State.collecting ||
                     state === State.uploading ||
                     state === State.collected_invalid
-                      ? "colors.grey"
-                      : props.fontColor,
-                  textDecoration: "underline"
+                      ? theme.palette.text.disabled
+                      : theme.palette.text.primary
                 }}
               >
                 {state === State.idle ||
