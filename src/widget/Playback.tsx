@@ -1,10 +1,8 @@
 import React, { useState } from "react";
 
-import Box from "@mui/material/Box";
 import Fab from "@mui/material/Fab";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
-import Typography from "@mui/material/Typography";
 
 import PauseIcon from "@mui/icons-material/Pause";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
@@ -15,7 +13,9 @@ import { Page, selectFile } from "./DataCollectionComponent";
 
 import PlaybackPlot, { PlaybackProgress, PlaybackSlider } from "./PlaybackPlot";
 
-const showHelp = false;
+import { Canvas } from "./mui_extensions/Canvas";
+import { Content } from "./mui_extensions/Content";
+import { Controls } from "./mui_extensions/Controls";
 
 const Input = styled("input")({
   display: "none"
@@ -45,131 +45,84 @@ export const Playback = (props: any): JSX.Element => {
   };
 
   return (
-    <>
-      <Stack spacing={2}>
-        <Box
-          sx={{
-            width: props.dimensions.width + "px",
-            height: props.dimensions.heightTitle + "px",
-            position: "relative",
-            bgcolor: "section.background"
-          }}
-        >
-          <Typography
-            variant="h5"
-            sx={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)"
-            }}
-          >
-            ADC Playback
-          </Typography>
-          {showHelp && (
-            <Button
-              variant="text"
-              sx={{
-                position: "absolute",
-                top: "50%",
-                left: "16px",
-                transform: "translate(0%, -50%)"
-              }}
-            >
-              <Typography variant="underline">Help</Typography>
-            </Button>
-          )}
-        </Box>
-        <Box
-          sx={{
-            width: props.dimensions.width + "px",
-            minHeight: props.dimensions.heightContent + "px",
-            boxSizing: "border-box",
-            padding: "24px",
-            position: "relative",
-            bgcolor: "section.background",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center"
-          }}
-        >
-          <PlaybackPlot
-            run={run}
-            setRun={setRun}
-            numCols={props.numCols}
-            numRows={props.numRows}
-            doSync={doSync}
-          />
-        </Box>
-        <Box
-          sx={{
-            width: props.dimensions.width + "px",
-            minHeight: props.dimensions.heightControls + "px",
-            boxSizing: "border-box",
-            padding: "24px",
-            position: "relative",
-            bgcolor: "section.background",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center"
-          }}
-        >
-          <div style={{ width: "100%" }}>
-            <Stack spacing={3} direction="row">
-              {run === false ? (
-                <Fab
-                  onClick={() => {
-                    setRun(true);
-                  }}
-                >
-                  <PlayArrowIcon />
-                </Fab>
-              ) : (
-                <Fab
-                  onClick={() => {
-                    setRun(false);
-                  }}
-                >
-                  <PauseIcon />
-                </Fab>
-              )}
-              {run ? (
-                <div style={{ width: "100%", paddingTop: "18px" }}>
-                  <PlaybackProgress sync={sync} />
-                </div>
-              ) : (
-                <div style={{ width: "100%", paddingTop: "5px" }}>
-                  <PlaybackSlider sync={sync} />
-                </div>
-              )}
-            </Stack>
-          </div>
-          <Stack spacing={2} direction="row" sx={{ marginTop: "24px" }}>
-            <Button onClick={handleBackButtonClick} sx={{ width: "150px" }}>
-              Back
-            </Button>
-            {selectFile && (
-              <label
-                htmlFor="webds_heatmap_select_file_input"
-                style={{ display: "flex" }}
+    <Canvas title="ADC Playback">
+      <Content
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center"
+        }}
+      >
+        <PlaybackPlot
+          run={run}
+          setRun={setRun}
+          numCols={props.numCols}
+          numRows={props.numRows}
+          doSync={doSync}
+        />
+      </Content>
+      <Controls
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center"
+        }}
+      >
+        <div style={{ width: "100%" }}>
+          <Stack spacing={3} direction="row">
+            {run === false ? (
+              <Fab
+                onClick={() => {
+                  setRun(true);
+                }}
               >
-                <Input
-                  id="webds_heatmap_select_file_input"
-                  type="file"
-                  accept=".json"
-                  onChange={handleSelectButtonClick}
-                />
-                <Button component="span" sx={{ width: "150px" }}>
-                  Select
-                </Button>
-              </label>
+                <PlayArrowIcon />
+              </Fab>
+            ) : (
+              <Fab
+                onClick={() => {
+                  setRun(false);
+                }}
+              >
+                <PauseIcon />
+              </Fab>
+            )}
+            {run ? (
+              <div style={{ width: "100%", paddingTop: "18px" }}>
+                <PlaybackProgress sync={sync} />
+              </div>
+            ) : (
+              <div style={{ width: "100%", paddingTop: "5px" }}>
+                <PlaybackSlider sync={sync} />
+              </div>
             )}
           </Stack>
-        </Box>
-      </Stack>
-    </>
+        </div>
+        <Stack spacing={2} direction="row" sx={{ marginTop: "24px" }}>
+          <Button onClick={handleBackButtonClick} sx={{ width: "150px" }}>
+            Back
+          </Button>
+          {selectFile && (
+            <label
+              htmlFor="webds_heatmap_select_file_input"
+              style={{ display: "flex" }}
+            >
+              <Input
+                id="webds_heatmap_select_file_input"
+                type="file"
+                accept=".json"
+                onChange={handleSelectButtonClick}
+              />
+              <Button component="span" sx={{ width: "150px" }}>
+                Select
+              </Button>
+            </label>
+          )}
+        </Stack>
+      </Controls>
+    </Canvas>
   );
 };
 

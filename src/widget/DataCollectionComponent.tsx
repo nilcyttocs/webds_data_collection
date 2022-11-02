@@ -29,18 +29,6 @@ export const selectFile: any = null;
 
 const TESTRAIL_URL = "http://nexus.synaptics.com:8083/TestRail/";
 
-const WIDTH = 800;
-const HEIGHT_TITLE = 70;
-const HEIGHT_CONTENT = 450;
-const HEIGHT_CONTROLS = 120;
-
-const dimensions = {
-  width: WIDTH,
-  heightTitle: HEIGHT_TITLE,
-  heightContent: HEIGHT_CONTENT,
-  heightControls: HEIGHT_CONTROLS
-};
-
 let alertMessage = "";
 
 const alertMessageAppInfo = "Failed to read application info from device.";
@@ -166,7 +154,6 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
         return (
           <Landing
             changePage={changePage}
-            dimensions={dimensions}
             testCases={testCases}
             setRecordedData={setRecordedData}
           />
@@ -175,7 +162,6 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
         return (
           <Playback
             changePage={changePage}
-            dimensions={dimensions}
             numCols={colsRows[0]}
             numRows={colsRows[1]}
           />

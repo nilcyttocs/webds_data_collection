@@ -1,6 +1,5 @@
 import React, { useContext, useEffect, useReducer, useState } from "react";
 
-import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -10,7 +9,7 @@ import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemButton from "@mui/material/ListItemButton";
 
-import SvgIcon from "@mui/material/SvgIcon";
+import InfoIcon from "@mui/icons-material/Info";
 import IconButton from "@mui/material/IconButton";
 
 import LinearProgress from "@mui/material/LinearProgress";
@@ -26,7 +25,9 @@ import { TouchcommReport } from "@webds/service";
 
 import { Page, testRailRequest } from "./DataCollectionComponent";
 
-import TestRailLogo from "./TestRailLogo";
+import { Canvas } from "./mui_extensions/Canvas";
+import { Content } from "./mui_extensions/Content";
+import { Controls } from "./mui_extensions/Controls";
 
 import { requestAPI } from "../handler";
 
@@ -99,8 +100,6 @@ const TESTRAIL_CASES_VIEW_URL =
   "https://synasdd.testrail.net/index.php?/cases/view/";
 
 const DEFAULT_DATA_FILE_NAME = "collected_data.json";
-
-const showHelp = false;
 
 let eventSource: EventSource | undefined;
 let eventData: any;
@@ -206,6 +205,7 @@ const reducer = (state: State, action: string) => {
 export const Landing = (props: any): JSX.Element => {
   const [state, dispatch] = useReducer(reducer, stateStore);
   const [testCase, setTestCase] = useState<any>(testCaseStore);
+  const [stepsCase, setStepsCase] = useState<any>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [listRightPdding, setListRightPadding] = useState(0);
 
@@ -354,11 +354,12 @@ export const Landing = (props: any): JSX.Element => {
             secondaryAction={
               <IconButton
                 edge="start"
-                onClick={() => handleTestRailButtonClick(item.id)}
+                onClick={() => {
+                  setStepsCase(item);
+                  handleOpenDialogButtonClick();
+                }}
               >
-                <SvgIcon>
-                  <TestRailLogo />
-                </SvgIcon>
+                <InfoIcon color="primary" />
               </IconButton>
             }
           >
@@ -452,7 +453,7 @@ export const Landing = (props: any): JSX.Element => {
   };
 
   const generateTestSteps = (): JSX.Element[] => {
-    return testCase.custom_steps
+    return stepsCase?.custom_steps
       .match(/(\d+\.\s?)?(.*?)(\r\n|\r|\n|$)/g)
       .map((item: string, index: number) => {
         item = item.replace(/(\r\n|\r|\n)/gm, "").trim();
@@ -487,48 +488,9 @@ export const Landing = (props: any): JSX.Element => {
 
   return (
     <>
-      <Stack spacing={2}>
-        <Box
+      <Canvas title="Data Collection">
+        <Content
           sx={{
-            width: props.dimensions.width + "px",
-            height: props.dimensions.heightTitle + "px",
-            position: "relative",
-            bgcolor: "section.background"
-          }}
-        >
-          <Typography
-            variant="h5"
-            sx={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)"
-            }}
-          >
-            Data Collection
-          </Typography>
-          {showHelp && (
-            <Button
-              variant="text"
-              sx={{
-                position: "absolute",
-                top: "50%",
-                left: "16px",
-                transform: "translate(0%, -50%)"
-              }}
-            >
-              <Typography variant="underline">Help</Typography>
-            </Button>
-          )}
-        </Box>
-        <Box
-          sx={{
-            width: props.dimensions.width + "px",
-            height: props.dimensions.heightContent + "px",
-            boxSizing: "border-box",
-            padding: "24px",
-            position: "relative",
-            bgcolor: "section.background",
             display: "flex",
             flexDirection: "column"
           }}
@@ -549,15 +511,9 @@ export const Landing = (props: any): JSX.Element => {
           >
             <List sx={{ padding: "0px" }}>{generateListItems()}</List>
           </div>
-        </Box>
-        <Box
+        </Content>
+        <Controls
           sx={{
-            width: props.dimensions.width + "px",
-            minHeight: props.dimensions.heightControls + "px",
-            boxSizing: "border-box",
-            padding: "24px",
-            position: "relative",
-            bgcolor: "section.background",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -603,7 +559,13 @@ export const Landing = (props: any): JSX.Element => {
                 state === State.uploading ||
                 state === State.collected_invalid
               }
-              onClick={() => handleOpenDialogButtonClick()}
+              onClick={
+                state === State.idle ||
+                state === State.selected ||
+                state === State.collecting
+                  ? () => handleTestRailButtonClick(testCase.id)
+                  : () => handleOpenDialogButtonClick()
+              }
             >
               <Typography
                 variant="underline"
@@ -620,46 +582,51 @@ export const Landing = (props: any): JSX.Element => {
                 {state === State.idle ||
                 state === State.selected ||
                 state === State.collecting
-                  ? "Test Steps"
+                  ? "View in TestRail"
                   : "View Last Frame"}
               </Typography>
             </Button>
           </Stack>
-        </Box>
-      </Stack>
-      {state !== State.idle && (
-        <Dialog
-          fullWidth
-          maxWidth={
-            state === State.selected || state === State.collecting ? "xs" : "md"
-          }
-          open={openDialog}
-          onClose={handleDialogClose}
-        >
-          <DialogTitle sx={{ textAlign: "center" }}>
-            {testCase.title}
-          </DialogTitle>
-          <DialogContent>
-            {state === State.selected || state === State.collecting ? (
-              <List dense>{generateTestSteps()}</List>
-            ) : (
-              collectedData.length > 0 && (
-                <Typography variant="body2">
-                  {JSON.stringify(collectedData[collectedData.length - 1])}
-                </Typography>
-              )
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button
-              onClick={handleDialogOkayButtonClick}
-              sx={{ width: "100px" }}
-            >
-              Okay
-            </Button>
-          </DialogActions>
-        </Dialog>
-      )}
+        </Controls>
+      </Canvas>
+      <Dialog
+        fullWidth
+        maxWidth={
+          state === State.idle ||
+          state === State.selected ||
+          state === State.collecting
+            ? "xs"
+            : "md"
+        }
+        open={openDialog}
+        onClose={handleDialogClose}
+      >
+        <DialogTitle sx={{ textAlign: "center" }}>
+          {state === State.idle ||
+          state === State.selected ||
+          state === State.collecting
+            ? stepsCase?.title
+            : testCase.title}
+        </DialogTitle>
+        <DialogContent>
+          {state === State.idle ||
+          state === State.selected ||
+          state === State.collecting ? (
+            <List dense>{generateTestSteps()}</List>
+          ) : (
+            collectedData.length > 0 && (
+              <Typography variant="body2">
+                {JSON.stringify(collectedData[collectedData.length - 1])}
+              </Typography>
+            )
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDialogOkayButtonClick} sx={{ width: "100px" }}>
+            Okay
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
