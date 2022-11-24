@@ -307,6 +307,7 @@ export const Landing = (props: any): JSX.Element => {
     } catch (error) {
       console.error(
         `Error - POST /webds/data-collection\n${dataToSend}\n${error}`
+      );
     }
     dataToSend = {
       request: "append",
@@ -324,6 +325,7 @@ export const Landing = (props: any): JSX.Element => {
     } catch (error) {
       console.error(
         `Error - POST /webds/data-collection\n${dataToSend}\n${error}`
+      );
     }
     dispatch("STASHED");
   };
