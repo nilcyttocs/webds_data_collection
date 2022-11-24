@@ -12,6 +12,14 @@ import Landing from "./Landing";
 
 import Playback from "./Playback";
 
+import {
+  ALERT_MESSAGE_APP_INFO,
+  ALERT_MESSAGE_RETRIEVE_CFG,
+  ALERT_MESSAGE_SUITE_ID_IN_CFG,
+  ALERT_MESSAGE_RETRIEVE_TEST_CASES,
+  TESTRAIL_URL
+} from "./constants";
+
 import { requestAPI } from "../handler";
 
 export enum Page {
@@ -27,17 +35,7 @@ export const RecordedDataContext = React.createContext({} as RecordedData);
 
 export const selectFile: any = null;
 
-const TESTRAIL_URL = "http://nexus.synaptics.com:8083/TestRail/";
-
 let alertMessage = "";
-
-const alertMessageAppInfo = "Failed to read application info from device.";
-
-const alertMessageRetrieveCfg = "Failed to retrieve cfg file.";
-
-const alertMessageSuiteIDInCfg = "Suite ID not available in cfg file.";
-
-const alertMessageRetrieveTestCases = "Failed to retrieve tests cases.";
 
 export const testRailRequest = async (
   endpoint: string,
@@ -144,6 +142,11 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
 
   const webdsTheme = props.service.ui.getWebDSTheme();
 
+  const showAlert = (message: string) => {
+    alertMessage = message;
+    setAlert(true);
+  };
+
   const changePage = (newPage: Page) => {
     setPage(newPage);
   };
@@ -156,6 +159,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
             changePage={changePage}
             testCases={testCases}
             setRecordedData={setRecordedData}
+            online={window.navigator.onLine}
           />
         );
       case Page.Playback:
@@ -186,8 +190,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
         }
       } catch (error) {
         console.error(`Error - POST /webds/command\n${dataToSend}\n${error}`);
-        alertMessage = alertMessageAppInfo;
-        setAlert(true);
+        showAlert(ALERT_MESSAGE_APP_INFO);
         return;
       }
 
@@ -200,15 +203,13 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
           suiteID = cfgSplitted[index + 1];
           console.log(`Suite ID: ${suiteID}`);
         } else {
-          console.error(alertMessageSuiteIDInCfg);
-          alertMessage = alertMessageSuiteIDInCfg;
-          setAlert(true);
+          console.error(ALERT_MESSAGE_SUITE_ID_IN_CFG);
+          showAlert(ALERT_MESSAGE_SUITE_ID_IN_CFG);
           return;
         }
       } catch (error) {
-        console.error(`${alertMessageRetrieveCfg}\n${error}`);
-        alertMessage = alertMessageRetrieveCfg;
-        setAlert(true);
+        console.error(`${ALERT_MESSAGE_RETRIEVE_CFG}\n${error}`);
+        showAlert(ALERT_MESSAGE_RETRIEVE_CFG);
         return;
       }
 
@@ -216,9 +217,8 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
         const testCases = await getTestCases(suiteID!);
         setTestCases(testCases);
       } catch (error) {
-        console.error(`${alertMessageRetrieveTestCases}\n${error}`);
-        alertMessage = alertMessageRetrieveTestCases;
-        setAlert(true);
+        console.error(`${ALERT_MESSAGE_RETRIEVE_TEST_CASES}\n${error}`);
+        showAlert(ALERT_MESSAGE_RETRIEVE_TEST_CASES);
         return;
       }
 

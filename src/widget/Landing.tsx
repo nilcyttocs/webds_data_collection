@@ -29,6 +29,8 @@ import { Canvas } from "./mui_extensions/Canvas";
 import { Content } from "./mui_extensions/Content";
 import { Controls } from "./mui_extensions/Controls";
 
+import { ProgressButton } from "./mui_extensions/Button";
+
 import { requestAPI } from "../handler";
 
 import { RecordedDataContext } from "../local_exports";
@@ -41,8 +43,17 @@ enum State {
   collected_invalid = "COLLECTED_INVALID",
   uploading = "UPLOADING",
   uploaded = "UPLOADED",
-  upload_failed = "UPLOAD_FAILED"
+  upload_failed = "UPLOAD_FAILED",
+  stashing = "STASHING",
+  stashed = "STASHED",
+  stash_failed = "STASH_FAILED"
 }
+
+type StashedData = {
+  testCaseID: number;
+  data: any;
+  fileName: string;
+};
 
 type TransitionType = {
   [T: string]: State;
@@ -67,7 +78,8 @@ const nextStateGraph: StateType = {
   [State.collected_valid]: {
     SELECT: State.selected,
     CANCEL: State.selected,
-    UPLOAD: State.uploading
+    UPLOAD: State.uploading,
+    STASH: State.stashing
   },
   [State.collected_invalid]: {
     SELECT: State.selected,
@@ -85,6 +97,19 @@ const nextStateGraph: StateType = {
     SELECT: State.selected,
     CANCEL: State.selected,
     UPLOAD: State.uploading
+  },
+  [State.stashing]: {
+    STASHED: State.stashed,
+    STASH_FAILED: State.stash_failed
+  },
+  [State.stashed]: {
+    SELECT: State.selected,
+    DONE: State.selected
+  },
+  [State.stash_failed]: {
+    SELECT: State.selected,
+    CANCEL: State.selected,
+    STASH: State.stashing
   }
 };
 
@@ -202,12 +227,17 @@ const reducer = (state: State, action: string) => {
   return nextState !== undefined ? nextState : state;
 };
 
+let cancelDequeue = false;
+
 export const Landing = (props: any): JSX.Element => {
   const [state, dispatch] = useReducer(reducer, stateStore);
   const [testCase, setTestCase] = useState<any>(testCaseStore);
   const [stepsCase, setStepsCase] = useState<any>(null);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [listRightPdding, setListRightPadding] = useState(0);
+  const [stashedData, setStashedData] = useState<StashedData[]>([]);
+  const [dequeueStash, setDequeueStash] = useState<boolean>(false);
+  const [progress, setProgress] = useState<number | undefined>(undefined);
+  const [openDialog, setOpenDialog] = useState<boolean>(false);
+  const [listRightPdding, setListRightPadding] = useState<number>(0);
 
   const recordedData = useContext(RecordedDataContext);
 
@@ -259,6 +289,45 @@ export const Landing = (props: any): JSX.Element => {
     dispatch("UPLOADED");
   };
 
+  const handleStashButtonClick = async () => {
+    dispatch("STASH");
+    let dataToSend: any = {
+      request: "append",
+      data: {
+        testCaseID: testCase.id,
+        data: { data: collectedData },
+        fileName: DEFAULT_DATA_FILE_NAME
+      }
+    };
+    try {
+      await requestAPI<any>("data-collection", {
+        body: JSON.stringify(dataToSend),
+        method: "POST"
+      });
+    } catch (error) {
+      console.error(
+        `Error - POST /webds/data-collection\n${dataToSend}\n${error}`
+    }
+    dataToSend = {
+      request: "append",
+      data: {
+        testCaseID: testCase.id,
+        data: staticConfig,
+        fileName: "static_config.json"
+      }
+    };
+    try {
+      await requestAPI<any>("data-collection", {
+        body: JSON.stringify(dataToSend),
+        method: "POST"
+      });
+    } catch (error) {
+      console.error(
+        `Error - POST /webds/data-collection\n${dataToSend}\n${error}`
+    }
+    dispatch("STASHED");
+  };
+
   const handleDoneButtonClick = () => {
     dispatch("DONE");
   };
@@ -273,12 +342,75 @@ export const Landing = (props: any): JSX.Element => {
     setOpenDialog(true);
   };
 
-  const handleDialogClose = () => {
+  const handleDialogClose = (event: object, reason: string) => {
+    if (
+      progress !== undefined &&
+      progress < 100 &&
+      reason === "backdropClick"
+    ) {
+      return;
+    }
     setOpenDialog(false);
   };
 
   const handleDialogOkayButtonClick = () => {
-    handleDialogClose();
+    setOpenDialog(false);
+  };
+
+  const handleDialogCancelButtonClick = () => {
+    if (progress === undefined) {
+      setDequeueStash(false);
+      setOpenDialog(false);
+    } else {
+      cancelDequeue = true;
+    }
+  };
+
+  const handleDialogUploadButtonClick = async () => {
+    const total = stashedData.length;
+    let remainingData = stashedData;
+    for (let i = 0; i < stashedData.length; i++) {
+      try {
+        if (cancelDequeue) {
+          break;
+        }
+        setProgress((i / total) * 100);
+        await uploadAttachment(
+          stashedData[i].testCaseID,
+          stashedData[i].data,
+          stashedData[i].fileName
+        );
+        remainingData = stashedData.slice(i + 1, stashedData.length);
+      } catch (error) {
+        console.error(error);
+        break;
+      }
+    }
+    let dataToSend: any;
+    if (remainingData.length > 0) {
+      dataToSend = {
+        request: "overwrite",
+        data: { stash: remainingData }
+      };
+    } else {
+      dataToSend = { request: "flush" };
+    }
+    try {
+      await requestAPI<any>("data-collection", {
+        body: JSON.stringify(dataToSend),
+        method: "POST"
+      });
+    } catch (error) {
+      console.error(
+        `Error - POST /webds/data-collection\n${dataToSend}\n${error}`
+      );
+    }
+    setProgress(100);
+  };
+
+  const handleDialogDoneButtonClick = () => {
+    setDequeueStash(false);
+    setOpenDialog(false);
   };
 
   const handleTestRailButtonClick = (testCaseID: number) => {
@@ -286,7 +418,11 @@ export const Landing = (props: any): JSX.Element => {
   };
 
   const handleListItemClick = (item: any) => {
-    if (state === State.collecting || state === State.uploading) {
+    if (
+      state === State.collecting ||
+      state === State.uploading ||
+      state === State.stashing
+    ) {
       return;
     }
     if (testCase && testCase.id === item.id) {
@@ -329,11 +465,30 @@ export const Landing = (props: any): JSX.Element => {
       case State.upload_failed:
         message = "Upload Failed";
         break;
+      case State.stashing:
+        message = "Stashing...";
+        break;
+      case State.stashed:
+        if (collectedData.length > 1) {
+          message = `${collectedData.length} Frames Stashed`;
+        } else {
+          message = `${collectedData.length} Frame Stashed`;
+        }
+        break;
+      case State.stash_failed:
+        message = "Stash Failed";
+        break;
       default:
         message = "Select Test Case";
     }
     return (
-      <Typography sx={state === State.upload_failed ? { color: "red" } : null}>
+      <Typography
+        sx={
+          state === State.upload_failed || state === State.stash_failed
+            ? { color: "red" }
+            : null
+        }
+      >
         {message}
       </Typography>
     );
@@ -372,7 +527,9 @@ export const Landing = (props: any): JSX.Element => {
             </ListItemButton>
           </ListItem>
           {selected &&
-            (state === State.collecting || state === State.uploading) && (
+            (state === State.collecting ||
+              state === State.uploading ||
+              state === State.stashing) && (
               <LinearProgress
                 sx={{
                   position: "absolute",
@@ -412,10 +569,12 @@ export const Landing = (props: any): JSX.Element => {
       case State.collected_valid:
       case State.uploading:
       case State.upload_failed:
+      case State.stashing:
+      case State.stash_failed:
         return (
           <Stack spacing={2} direction="row">
             <Button
-              disabled={state === State.uploading}
+              disabled={state === State.uploading || state === State.stashing}
               onClick={() => handleCancelButtonClick()}
               sx={{
                 width: "150px"
@@ -423,18 +582,31 @@ export const Landing = (props: any): JSX.Element => {
             >
               Cancel
             </Button>
-            <Button
-              disabled={state === State.uploading}
-              onClick={() => handleUploadButtonClick()}
-              sx={{
-                width: "150px"
-              }}
-            >
-              Upload
-            </Button>
+            {props.online ? (
+              <Button
+                disabled={state === State.uploading}
+                onClick={() => handleUploadButtonClick()}
+                sx={{
+                  width: "150px"
+                }}
+              >
+                Upload
+              </Button>
+            ) : (
+              <Button
+                disabled={state === State.stashing}
+                onClick={() => handleStashButtonClick()}
+                sx={{
+                  width: "150px"
+                }}
+              >
+                Stash
+              </Button>
+            )}
           </Stack>
         );
       case State.uploaded:
+      case State.stashed:
         return (
           <Button
             onClick={() => handleDoneButtonClick()}
@@ -482,13 +654,32 @@ export const Landing = (props: any): JSX.Element => {
   }, [recordedData]);
 
   useEffect(() => {
+    const checkStash = async () => {
+      try {
+        const response = await requestAPI<any>("data-collection");
+        setStashedData(response.stash);
+        if (response.stash.length > 0) {
+          cancelDequeue = false;
+          setDequeueStash(true);
+          setOpenDialog(true);
+        }
+      } catch (error) {
+        console.error(`Error - GET /webds/data-collection\n${error}`);
+      }
+    };
     stateStore = initialState;
     testCaseStore = initialTestCase;
+    if (props.online) {
+      checkStash();
+    }
   }, []);
 
   return (
     <>
-      <Canvas title="Data Collection">
+      <Canvas
+        title="Data Collection"
+        annotation={props.online ? null : "offline mode"}
+      >
         <Content
           sx={{
             display: "flex",
@@ -532,17 +723,20 @@ export const Landing = (props: any): JSX.Element => {
             {(state === State.collected_valid ||
               state === State.uploading ||
               state === State.uploaded ||
-              state === State.upload_failed) && (
+              state === State.upload_failed ||
+              state === State.stashing ||
+              state === State.stashed ||
+              state === State.stash_failed) && (
               <Button
                 variant="text"
-                disabled={state === State.uploading}
+                disabled={state === State.uploading || state === State.stashing}
                 onClick={() => handlePlaybackButtonClick()}
               >
                 <Typography
                   variant="underline"
                   sx={{
                     color:
-                      state === State.uploading
+                      state === State.uploading || state === State.stashing
                         ? theme.palette.text.disabled
                         : theme.palette.text.primary
                   }}
@@ -557,6 +751,7 @@ export const Landing = (props: any): JSX.Element => {
                 state === State.idle ||
                 state === State.collecting ||
                 state === State.uploading ||
+                state === State.stashing ||
                 state === State.collected_invalid
               }
               onClick={
@@ -574,6 +769,7 @@ export const Landing = (props: any): JSX.Element => {
                     state === State.idle ||
                     state === State.collecting ||
                     state === State.uploading ||
+                    state === State.stashing ||
                     state === State.collected_invalid
                       ? theme.palette.text.disabled
                       : theme.palette.text.primary
@@ -601,31 +797,72 @@ export const Landing = (props: any): JSX.Element => {
         open={openDialog}
         onClose={handleDialogClose}
       >
-        <DialogTitle sx={{ textAlign: "center" }}>
-          {state === State.idle ||
-          state === State.selected ||
-          state === State.collecting
-            ? stepsCase?.title
-            : testCase.title}
-        </DialogTitle>
-        <DialogContent>
-          {state === State.idle ||
-          state === State.selected ||
-          state === State.collecting ? (
-            <List dense>{generateTestSteps()}</List>
-          ) : (
-            collectedData.length > 0 && (
-              <Typography variant="body2">
-                {JSON.stringify(collectedData[collectedData.length - 1])}
+        {dequeueStash ? (
+          <>
+            <DialogTitle sx={{ textAlign: "center" }}>
+              Data Available in Stash
+            </DialogTitle>
+            <DialogContent>
+              <Typography variant="body1">
+                {stashedData.length > 1
+                  ? stashedData.length + " sets "
+                  : stashedData.length + " set "}
+                of data availabe in stash. Upload stashed data to TestRail?
               </Typography>
-            )
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDialogOkayButtonClick} sx={{ width: "100px" }}>
-            Okay
-          </Button>
-        </DialogActions>
+            </DialogContent>
+            <DialogActions>
+              {progress === undefined && (
+                <Button
+                  onClick={handleDialogCancelButtonClick}
+                  sx={{ width: "100px" }}
+                >
+                  Cancel
+                </Button>
+              )}
+              <ProgressButton
+                progress={progress}
+                onClick={handleDialogUploadButtonClick}
+                onDoneClick={handleDialogDoneButtonClick}
+                onCancelClick={handleDialogCancelButtonClick}
+                progressMessage="Uploading..."
+                sx={{ width: "100px", marginLeft: "8px" }}
+              >
+                Upload
+              </ProgressButton>
+            </DialogActions>
+          </>
+        ) : (
+          <>
+            <DialogTitle sx={{ textAlign: "center" }}>
+              {state === State.idle ||
+              state === State.selected ||
+              state === State.collecting
+                ? stepsCase?.title
+                : testCase.title}
+            </DialogTitle>
+            <DialogContent>
+              {state === State.idle ||
+              state === State.selected ||
+              state === State.collecting ? (
+                <List dense>{generateTestSteps()}</List>
+              ) : (
+                collectedData.length > 0 && (
+                  <Typography variant="body2">
+                    {JSON.stringify(collectedData[collectedData.length - 1])}
+                  </Typography>
+                )
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button
+                onClick={handleDialogOkayButtonClick}
+                sx={{ width: "100px" }}
+              >
+                Okay
+              </Button>
+            </DialogActions>
+          </>
+        )}
       </Dialog>
     </>
   );
