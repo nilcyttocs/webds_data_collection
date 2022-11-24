@@ -23,13 +23,13 @@ import { useTheme } from "@mui/material/styles";
 
 import { TouchcommReport } from "@webds/service";
 
-import { Page, testRailRequest } from "./DataCollectionComponent";
+import { Page, uploadAttachment } from "./DataCollectionComponent";
 
 import { Canvas } from "./mui_extensions/Canvas";
 import { Content } from "./mui_extensions/Content";
 import { Controls } from "./mui_extensions/Controls";
 
-import { ProgressButton } from "./mui_extensions/Button";
+import { DEFAULT_DATA_FILE_NAME, TESTRAIL_CASES_VIEW_URL } from "./constants";
 
 import { requestAPI } from "../handler";
 
@@ -48,12 +48,6 @@ enum State {
   stashed = "STASHED",
   stash_failed = "STASH_FAILED"
 }
-
-type StashedData = {
-  testCaseID: number;
-  data: any;
-  fileName: string;
-};
 
 type TransitionType = {
   [T: string]: State;
@@ -121,11 +115,6 @@ const REPORT_RAW = 19;
 const REPORT_BASELINE = 20;
 const REPORT_FPS = 120;
 
-const TESTRAIL_CASES_VIEW_URL =
-  "https://synasdd.testrail.net/index.php?/cases/view/";
-
-const DEFAULT_DATA_FILE_NAME = "collected_data.json";
-
 let eventSource: EventSource | undefined;
 let eventData: any;
 
@@ -149,26 +138,6 @@ const readStaticConfig = async () => {
     });
   } catch (error) {
     console.error(`Error - POST /webds/command\n${dataToSend}\n${error}`);
-  }
-};
-
-const uploadAttachment = async (
-  testCaseID: number,
-  data: any,
-  fileName: string
-) => {
-  try {
-    const endpoint = "add_attachment_to_case/" + testCaseID;
-    const jsonData = JSON.stringify(data);
-    const blob = new Blob([jsonData], { type: "application/json" });
-    const formData = new FormData();
-    formData.append("attachment", blob, fileName);
-    const attachment = await testRailRequest(endpoint, "POST", formData);
-    console.log(`Attachment ID: ${attachment.attachment_id}`);
-  } catch (error) {
-    console.error(error);
-    Promise.reject("Failed to upload attachment to TestRail");
-    return;
   }
 };
 
@@ -227,15 +196,10 @@ const reducer = (state: State, action: string) => {
   return nextState !== undefined ? nextState : state;
 };
 
-let cancelDequeue = false;
-
 export const Landing = (props: any): JSX.Element => {
   const [state, dispatch] = useReducer(reducer, stateStore);
   const [testCase, setTestCase] = useState<any>(testCaseStore);
   const [stepsCase, setStepsCase] = useState<any>(null);
-  const [stashedData, setStashedData] = useState<StashedData[]>([]);
-  const [dequeueStash, setDequeueStash] = useState<boolean>(false);
-  const [progress, setProgress] = useState<number | undefined>(undefined);
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [listRightPdding, setListRightPadding] = useState<number>(0);
 
@@ -345,73 +309,10 @@ export const Landing = (props: any): JSX.Element => {
   };
 
   const handleDialogClose = (event: object, reason: string) => {
-    if (
-      progress !== undefined &&
-      progress < 100 &&
-      reason === "backdropClick"
-    ) {
-      return;
-    }
     setOpenDialog(false);
   };
 
   const handleDialogOkayButtonClick = () => {
-    setOpenDialog(false);
-  };
-
-  const handleDialogCancelButtonClick = () => {
-    if (progress === undefined) {
-      setDequeueStash(false);
-      setOpenDialog(false);
-    } else {
-      cancelDequeue = true;
-    }
-  };
-
-  const handleDialogUploadButtonClick = async () => {
-    const total = stashedData.length;
-    let remainingData = stashedData;
-    for (let i = 0; i < stashedData.length; i++) {
-      try {
-        if (cancelDequeue) {
-          break;
-        }
-        setProgress((i / total) * 100);
-        await uploadAttachment(
-          stashedData[i].testCaseID,
-          stashedData[i].data,
-          stashedData[i].fileName
-        );
-        remainingData = stashedData.slice(i + 1, stashedData.length);
-      } catch (error) {
-        console.error(error);
-        break;
-      }
-    }
-    let dataToSend: any;
-    if (remainingData.length > 0) {
-      dataToSend = {
-        request: "overwrite",
-        data: { stash: remainingData }
-      };
-    } else {
-      dataToSend = { request: "flush" };
-    }
-    try {
-      await requestAPI<any>("data-collection", {
-        body: JSON.stringify(dataToSend),
-        method: "POST"
-      });
-    } catch (error) {
-      console.error(
-        `Error - POST /webds/data-collection\n${dataToSend}\n${error}`
-      );
-    }
-    setProgress(100);
-  };
-
-  const handleDialogDoneButtonClick = () => {
-    setDequeueStash(false);
     setOpenDialog(false);
   };
 
@@ -643,7 +544,7 @@ export const Landing = (props: any): JSX.Element => {
   };
 
   useEffect(() => {
-    const element = document.getElementById("webds_sandbox_test_list");
+    const element = document.getElementById("webds_data_collection_test_list");
     if (element && element.scrollHeight > element.clientHeight) {
       setListRightPadding(8);
     } else {
@@ -656,24 +557,8 @@ export const Landing = (props: any): JSX.Element => {
   }, [recordedData]);
 
   useEffect(() => {
-    const checkStash = async () => {
-      try {
-        const response = await requestAPI<any>("data-collection");
-        setStashedData(response.stash);
-        if (response.stash.length > 0) {
-          cancelDequeue = false;
-          setDequeueStash(true);
-          setOpenDialog(true);
-        }
-      } catch (error) {
-        console.error(`Error - GET /webds/data-collection\n${error}`);
-      }
-    };
     stateStore = initialState;
     testCaseStore = initialTestCase;
-    if (props.online) {
-      checkStash();
-    }
   }, []);
 
   return (
@@ -696,7 +581,7 @@ export const Landing = (props: any): JSX.Element => {
             {generateMessage()}
           </div>
           <div
-            id="webds_sandbox_test_list"
+            id="webds_data_collection_test_list"
             style={{
               paddingRight: listRightPdding,
               overflow: "auto"
@@ -799,72 +684,31 @@ export const Landing = (props: any): JSX.Element => {
         open={openDialog}
         onClose={handleDialogClose}
       >
-        {dequeueStash ? (
-          <>
-            <DialogTitle sx={{ textAlign: "center" }}>
-              Data Available in Stash
-            </DialogTitle>
-            <DialogContent>
-              <Typography variant="body1">
-                {stashedData.length > 1
-                  ? stashedData.length + " sets "
-                  : stashedData.length + " set "}
-                of data availabe in stash. Upload stashed data to TestRail?
+        <DialogTitle sx={{ textAlign: "center" }}>
+          {state === State.idle ||
+          state === State.selected ||
+          state === State.collecting
+            ? stepsCase?.title
+            : testCase.title}
+        </DialogTitle>
+        <DialogContent>
+          {state === State.idle ||
+          state === State.selected ||
+          state === State.collecting ? (
+            <List dense>{generateTestSteps()}</List>
+          ) : (
+            collectedData.length > 0 && (
+              <Typography variant="body2">
+                {JSON.stringify(collectedData[collectedData.length - 1])}
               </Typography>
-            </DialogContent>
-            <DialogActions>
-              {progress === undefined && (
-                <Button
-                  onClick={handleDialogCancelButtonClick}
-                  sx={{ width: "100px" }}
-                >
-                  Cancel
-                </Button>
-              )}
-              <ProgressButton
-                progress={progress}
-                onClick={handleDialogUploadButtonClick}
-                onDoneClick={handleDialogDoneButtonClick}
-                onCancelClick={handleDialogCancelButtonClick}
-                progressMessage="Uploading..."
-                sx={{ width: "100px", marginLeft: "8px" }}
-              >
-                Upload
-              </ProgressButton>
-            </DialogActions>
-          </>
-        ) : (
-          <>
-            <DialogTitle sx={{ textAlign: "center" }}>
-              {state === State.idle ||
-              state === State.selected ||
-              state === State.collecting
-                ? stepsCase?.title
-                : testCase.title}
-            </DialogTitle>
-            <DialogContent>
-              {state === State.idle ||
-              state === State.selected ||
-              state === State.collecting ? (
-                <List dense>{generateTestSteps()}</List>
-              ) : (
-                collectedData.length > 0 && (
-                  <Typography variant="body2">
-                    {JSON.stringify(collectedData[collectedData.length - 1])}
-                  </Typography>
-                )
-              )}
-            </DialogContent>
-            <DialogActions>
-              <Button
-                onClick={handleDialogOkayButtonClick}
-                sx={{ width: "100px" }}
-              >
-                Okay
-              </Button>
-            </DialogActions>
-          </>
-        )}
+            )
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDialogOkayButtonClick} sx={{ width: "100px" }}>
+            Okay
+          </Button>
+        </DialogActions>
       </Dialog>
     </>
   );

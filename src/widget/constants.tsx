@@ -10,3 +10,8 @@ export const ALERT_MESSAGE_RETRIEVE_TEST_CASES =
   "Failed to retrieve tests cases.";
 
 export const TESTRAIL_URL = "http://nexus.synaptics.com:8083/TestRail/";
+
+export const TESTRAIL_CASES_VIEW_URL =
+  "https://synasdd.testrail.net/index.php?/cases/view/";
+
+export const DEFAULT_DATA_FILE_NAME = "collected_data.json";

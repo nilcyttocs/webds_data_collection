@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
 
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+
 import Alert from "@mui/material/Alert";
 
 import CircularProgress from "@mui/material/CircularProgress";
@@ -11,6 +19,8 @@ import { TouchcommReport } from "@webds/service";
 import Landing from "./Landing";
 
 import Playback from "./Playback";
+
+import { ProgressButton } from "./mui_extensions/Button";
 
 import {
   ALERT_MESSAGE_APP_INFO,
@@ -31,13 +41,21 @@ export type RecordedData = {
   data: TouchcommReport[];
 };
 
+type StashedData = {
+  testCaseID: number;
+  data: any;
+  fileName: string;
+};
+
 export const RecordedDataContext = React.createContext({} as RecordedData);
 
 export const selectFile: any = null;
 
 let alertMessage = "";
 
-export const testRailRequest = async (
+let cancelDequeue = false;
+
+const testRailRequest = async (
   endpoint: string,
   method: string,
   body: any = null
@@ -83,6 +101,26 @@ export const testRailRequest = async (
   }
 
   return data;
+};
+
+export const uploadAttachment = async (
+  testCaseID: number,
+  data: any,
+  fileName: string
+) => {
+  try {
+    const endpoint = "add_attachment_to_case/" + testCaseID;
+    const jsonData = JSON.stringify(data);
+    const blob = new Blob([jsonData], { type: "application/json" });
+    const formData = new FormData();
+    formData.append("attachment", blob, fileName);
+    const attachment = await testRailRequest(endpoint, "POST", formData);
+    console.log(`Attachment ID: ${attachment.attachment_id}`);
+  } catch (error) {
+    console.error(error);
+    Promise.reject("Failed to upload attachment to TestRail");
+    return;
+  }
 };
 
 const getTestCases = async (suiteID: number): Promise<any[]> => {
@@ -139,6 +177,10 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
   const [colsRows, setColsRows] = useState<[number, number]>([0, 0]);
   const [testCases, setTestCases] = useState<any[]>([]);
   const [recordedData, setRecordedData] = useState<RecordedData>({ data: [] });
+  const [stashedData, setStashedData] = useState<StashedData[]>([]);
+  const [dequeueStash, setDequeueStash] = useState<boolean>(false);
+  const [progress, setProgress] = useState<number | undefined>(undefined);
+  const [openDialog, setOpenDialog] = useState<boolean>(true);
 
   const webdsTheme = props.service.ui.getWebDSTheme();
 
@@ -175,6 +217,73 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
     }
   };
 
+  const handleDialogClose = (event: object, reason: string) => {
+    if (
+      progress !== undefined &&
+      progress < 100 &&
+      reason === "backdropClick"
+    ) {
+      return;
+    }
+    setOpenDialog(false);
+  };
+
+  const handleDialogCancelButtonClick = () => {
+    if (progress === undefined) {
+      setDequeueStash(false);
+      setOpenDialog(false);
+    } else {
+      cancelDequeue = true;
+    }
+  };
+
+  const handleDialogUploadButtonClick = async () => {
+    const total = stashedData.length;
+    let remainingData = stashedData;
+    for (let i = 0; i < stashedData.length; i++) {
+      try {
+        if (cancelDequeue) {
+          break;
+        }
+        setProgress((i / total) * 100);
+        await uploadAttachment(
+          stashedData[i].testCaseID,
+          stashedData[i].data,
+          stashedData[i].fileName
+        );
+        remainingData = stashedData.slice(i + 1, stashedData.length);
+      } catch (error) {
+        console.error(error);
+        break;
+      }
+    }
+    let dataToSend: any;
+    if (remainingData.length > 0) {
+      dataToSend = {
+        request: "overwrite",
+        data: { stash: remainingData }
+      };
+    } else {
+      dataToSend = { request: "flush" };
+    }
+    try {
+      await requestAPI<any>("data-collection", {
+        body: JSON.stringify(dataToSend),
+        method: "POST"
+      });
+    } catch (error) {
+      console.error(
+        `Error - POST /webds/data-collection\n${dataToSend}\n${error}`
+      );
+    }
+    setProgress(100);
+  };
+
+  const handleDialogDoneButtonClick = () => {
+    setDequeueStash(false);
+    setOpenDialog(false);
+  };
+
   useEffect(() => {
     const initialize = async () => {
       const dataToSend: any = {
@@ -193,7 +302,6 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
         showAlert(ALERT_MESSAGE_APP_INFO);
         return;
       }
-
       let suiteID: number;
       try {
         const cfg = await props.service.packrat.fetch.getCfgFile();
@@ -212,7 +320,6 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
         showAlert(ALERT_MESSAGE_RETRIEVE_CFG);
         return;
       }
-
       try {
         const testCases = await getTestCases(suiteID!);
         setTestCases(testCases);
@@ -225,29 +332,97 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
       setInitialized(true);
     };
 
-    initialize();
+    if (!openDialog) {
+      initialize();
+    }
+  }, [openDialog]);
+
+  useEffect(() => {
+    const checkStash = async () => {
+      try {
+        const response = await requestAPI<any>("data-collection");
+        setStashedData(response.stash);
+        if (response.stash.length > 0) {
+          cancelDequeue = false;
+          setDequeueStash(true);
+          setOpenDialog(true);
+        } else {
+          setOpenDialog(false);
+        }
+      } catch (error) {
+        console.error(`Error - GET /webds/data-collection\n${error}`);
+      }
+    };
+    if (window.navigator.onLine) {
+      checkStash();
+    } else {
+      setOpenDialog(false);
+    }
   }, []);
 
   return (
     <>
       <ThemeProvider theme={webdsTheme}>
         <div className="jp-webds-widget-body">
-          {alert && (
-            <Alert
-              severity="error"
-              onClose={() => setAlert(false)}
-              sx={{ whiteSpace: "pre-wrap" }}
+          {dequeueStash ? (
+            <Dialog
+              fullWidth
+              maxWidth="xs"
+              open={openDialog}
+              onClose={handleDialogClose}
             >
-              {alertMessage}
-            </Alert>
-          )}
-          {initialized && (
-            <RecordedDataContext.Provider value={recordedData}>
-              {displayPage()}
-            </RecordedDataContext.Provider>
+              <DialogTitle sx={{ textAlign: "center" }}>
+                Data Available in Stash
+              </DialogTitle>
+              <DialogContent>
+                <Typography variant="body1">
+                  {stashedData.length > 1
+                    ? stashedData.length + " sets "
+                    : stashedData.length + " set "}
+                  of data availabe in stash. Upload stashed data to TestRail?
+                </Typography>
+              </DialogContent>
+              <DialogActions>
+                {progress === undefined && (
+                  <Button
+                    onClick={handleDialogCancelButtonClick}
+                    sx={{ width: "100px" }}
+                  >
+                    Cancel
+                  </Button>
+                )}
+                <ProgressButton
+                  progress={progress}
+                  onClick={handleDialogUploadButtonClick}
+                  onDoneClick={handleDialogDoneButtonClick}
+                  onCancelClick={handleDialogCancelButtonClick}
+                  progressMessage="Uploading..."
+                  sx={{ width: "100px", marginLeft: "8px" }}
+                >
+                  Upload
+                </ProgressButton>
+              </DialogActions>
+            </Dialog>
+          ) : (
+            <>
+              {alert && (
+                <Alert
+                  severity="error"
+                  onClose={() => setAlert(false)}
+                  sx={{ whiteSpace: "pre-wrap" }}
+                >
+                  {alertMessage}
+                </Alert>
+              )}
+              {initialized && (
+                <RecordedDataContext.Provider value={recordedData}>
+                  {displayPage()}
+                </RecordedDataContext.Provider>
+              )}
+            </>
           )}
         </div>
-        {!initialized && (
+        {!dequeueStash && !initialized && (
           <div
             style={{
               position: "absolute",
