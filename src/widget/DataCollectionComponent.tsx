@@ -23,6 +23,7 @@ import Playback from "./Playback";
 import { ProgressButton } from "./mui_extensions/Button";
 
 import {
+  ALERT_MESSAGE_PACKRAT_ID,
   ALERT_MESSAGE_APP_INFO,
   ALERT_MESSAGE_RETRIEVE_CFG,
   ALERT_MESSAGE_SUITE_ID_IN_CFG,
@@ -118,12 +119,11 @@ export const uploadAttachment = async (
     console.log(`Attachment ID: ${attachment.attachment_id}`);
   } catch (error) {
     console.error(error);
-    Promise.reject("Failed to upload attachment to TestRail");
-    return;
+    return Promise.reject("Failed to upload attachment to TestRail");
   }
 };
 
-const getTestCases = async (suiteID: number): Promise<any[]> => {
+const getTestCasesFromTestRail = async (suiteID: number): Promise<any[]> => {
   let projectID: number;
   try {
     const endpoint = "get_suite/" + suiteID;
@@ -131,7 +131,7 @@ const getTestCases = async (suiteID: number): Promise<any[]> => {
     projectID = response.project_id;
     console.log(`Project ID: ${projectID}`);
   } catch (error) {
-    Promise.reject(error);
+    return Promise.reject(error);
   }
 
   const sectionIDs: number[] = [];
@@ -150,7 +150,7 @@ const getTestCases = async (suiteID: number): Promise<any[]> => {
       });
     }
   } catch (error) {
-    Promise.reject(error);
+    return Promise.reject(error);
   }
 
   const testCases: any[] = [];
@@ -164,7 +164,86 @@ const getTestCases = async (suiteID: number): Promise<any[]> => {
       }
     });
   } catch (error) {
-    Promise.reject(error);
+    return Promise.reject(error);
+  }
+
+  return testCases;
+};
+
+const getTestCases = async (props: any): Promise<any[]> => {
+  let packratID: number;
+  try {
+    packratID = await props.service.touchcomm.getPackratID();
+  } catch (error) {
+    console.error(error);
+    return Promise.reject(ALERT_MESSAGE_PACKRAT_ID);
+  }
+
+  let suiteID: number | undefined = undefined;
+  try {
+    const cfg = await requestAPI<any>(`packrat/${packratID}/cfg.json`);
+    if ("testSuiteID" in cfg) {
+      suiteID = cfg.testSuiteID;
+    }
+  } catch (error) {
+    console.error(error);
+  }
+  if (suiteID === undefined) {
+    try {
+      const cfg = await props.service.packrat.fetch.getCfgFile();
+      const cfgSplitted = cfg.replace(/\n/g, " ").split(" ");
+      const index = cfgSplitted.indexOf(";TEST_SUITE");
+      if (index !== -1) {
+        console.log(`Suite ID: ${suiteID}`);
+        const content = new Blob([JSON.stringify({ testSuiteID: suiteID })], {
+          type: "application/json"
+        });
+        const formData = new FormData();
+        formData.append("blob", content, "cfg.json");
+        try {
+          await requestAPI<any>("packrat/" + packratID, {
+            body: formData,
+            method: "POST"
+          });
+        } catch (error) {
+          console.error(`Error - POST /webds/packrat/${packratID}\n${error}`);
+        }
+      } else {
+        console.error(ALERT_MESSAGE_SUITE_ID_IN_CFG);
+        return Promise.reject(ALERT_MESSAGE_SUITE_ID_IN_CFG);
+      }
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(ALERT_MESSAGE_RETRIEVE_CFG);
+    }
+  }
+
+  let testCases: any = undefined;
+  try {
+    testCases = await requestAPI<any>(`packrat/${suiteID}/test_cases.json`);
+  } catch (error) {
+    console.error(error);
+  }
+  if (testCases === undefined) {
+    try {
+      testCases = await getTestCasesFromTestRail(suiteID!);
+      const content = new Blob([JSON.stringify(testCases)], {
+        type: "application/json"
+      });
+      const formData = new FormData();
+      formData.append("blob", content, "test_cases.json");
+      try {
+        await requestAPI<any>("packrat/" + suiteID, {
+          body: formData,
+          method: "POST"
+        });
+      } catch (error) {
+        console.error(`Error - POST /webds/packrat/${suiteID}\n${error}`);
+      }
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(ALERT_MESSAGE_RETRIEVE_TEST_CASES);
+    }
   }
 
   return testCases;
@@ -174,6 +253,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
   const [initialized, setInitialized] = useState<boolean>(false);
   const [alert, setAlert] = useState<boolean>(false);
   const [page, setPage] = useState<Page>(Page.Landing);
+  const [online, setOnline] = useState<boolean>(false);
   const [colsRows, setColsRows] = useState<[number, number]>([0, 0]);
   const [testCases, setTestCases] = useState<any[]>([]);
   const [recordedData, setRecordedData] = useState<RecordedData>({ data: [] });
@@ -201,7 +281,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
             changePage={changePage}
             testCases={testCases}
             setRecordedData={setRecordedData}
-            online={window.navigator.onLine}
+            online={online}
           />
         );
       case Page.Playback:
@@ -302,33 +382,16 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
         showAlert(ALERT_MESSAGE_APP_INFO);
         return;
       }
-      let suiteID: number;
+
+      let testCases: any;
       try {
-        const cfg = await props.service.packrat.fetch.getCfgFile();
-        const cfgSplitted = cfg.replace(/\n/g, " ").split(" ");
-        const index = cfgSplitted.indexOf(";TEST_SUITE");
-        if (index !== -1) {
-          suiteID = cfgSplitted[index + 1];
-          console.log(`Suite ID: ${suiteID}`);
-        } else {
-          console.error(ALERT_MESSAGE_SUITE_ID_IN_CFG);
-          showAlert(ALERT_MESSAGE_SUITE_ID_IN_CFG);
-          return;
-        }
+        testCases = await getTestCases(props);
       } catch (error) {
-        console.error(`${ALERT_MESSAGE_RETRIEVE_CFG}\n${error}`);
-        showAlert(ALERT_MESSAGE_RETRIEVE_CFG);
-        return;
-      }
-      try {
-        const testCases = await getTestCases(suiteID!);
-        setTestCases(testCases);
-      } catch (error) {
-        console.error(`${ALERT_MESSAGE_RETRIEVE_TEST_CASES}\n${error}`);
-        showAlert(ALERT_MESSAGE_RETRIEVE_TEST_CASES);
+        showAlert(error as string);
         return;
       }
 
+      setTestCases(testCases);
       setInitialized(true);
     };
 
@@ -353,9 +416,11 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
         console.error(`Error - GET /webds/data-collection\n${error}`);
       }
     };
-    if (window.navigator.onLine) {
+    if (props.service.pinormos.isTestRailOnline()) {
+      setOnline(true);
       checkStash();
     } else {
+      setOnline(false);
       setOpenDialog(false);
     }
   }, []);

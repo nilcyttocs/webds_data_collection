@@ -1,3 +1,6 @@
+export const ALERT_MESSAGE_PACKRAT_ID =
+  "Failed to retrieve Packrat ID from device.";
+
 export const ALERT_MESSAGE_APP_INFO =
   "Failed to read application info from device.";
 
