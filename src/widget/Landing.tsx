@@ -33,7 +33,7 @@ import { DEFAULT_DATA_FILE_NAME, TESTRAIL_CASES_VIEW_URL } from "./constants";
 
 import { requestAPI } from "../handler";
 
-import { RecordedDataContext } from "../local_exports";
+import { ADCDataContext } from "./local_exports";
 
 enum State {
   idle = "IDLE",
@@ -203,7 +203,7 @@ export const Landing = (props: any): JSX.Element => {
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [listRightPdding, setListRightPadding] = useState<number>(0);
 
-  const recordedData = useContext(RecordedDataContext);
+  const adcData = useContext(ADCDataContext);
 
   const theme = useTheme();
 
@@ -219,7 +219,7 @@ export const Landing = (props: any): JSX.Element => {
     removeEvent();
     if (collectedData.length > 0) {
       await readStaticConfig();
-      props.setRecordedData({ data: collectedData });
+      props.setADCData({ data: collectedData });
       dispatch("STOP_VALID");
     } else {
       dispatch("STOP_INVALID");
@@ -553,8 +553,8 @@ export const Landing = (props: any): JSX.Element => {
   }, [props.testCases]);
 
   useEffect(() => {
-    collectedData = recordedData.data;
-  }, [recordedData]);
+    collectedData = adcData.data;
+  }, [adcData]);
 
   useEffect(() => {
     stateStore = initialState;

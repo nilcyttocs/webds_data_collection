@@ -38,7 +38,7 @@ export enum Page {
   Playback = "PLAYBACK"
 }
 
-export type RecordedData = {
+export type ADCData = {
   data: TouchcommReport[];
 };
 
@@ -48,7 +48,7 @@ type StashedData = {
   fileName: string;
 };
 
-export const RecordedDataContext = React.createContext({} as RecordedData);
+export const ADCDataContext = React.createContext({} as ADCData);
 
 export const selectFile: any = null;
 
@@ -194,6 +194,7 @@ const getTestCases = async (props: any): Promise<any[]> => {
       const cfgSplitted = cfg.replace(/\n/g, " ").split(" ");
       const index = cfgSplitted.indexOf(";TEST_SUITE");
       if (index !== -1) {
+        suiteID = cfgSplitted[index + 1];
         console.log(`Suite ID: ${suiteID}`);
         const content = new Blob([JSON.stringify({ testSuiteID: suiteID })], {
           type: "application/json"
@@ -256,7 +257,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
   const [online, setOnline] = useState<boolean>(false);
   const [colsRows, setColsRows] = useState<[number, number]>([0, 0]);
   const [testCases, setTestCases] = useState<any[]>([]);
-  const [recordedData, setRecordedData] = useState<RecordedData>({ data: [] });
+  const [adcData, setADCData] = useState<ADCData>({ data: [] });
   const [stashedData, setStashedData] = useState<StashedData[]>([]);
   const [dequeueStash, setDequeueStash] = useState<boolean>(false);
   const [progress, setProgress] = useState<number | undefined>(undefined);
@@ -280,7 +281,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
           <Landing
             changePage={changePage}
             testCases={testCases}
-            setRecordedData={setRecordedData}
+            setADCData={setADCData}
             online={online}
           />
         );
@@ -480,9 +481,9 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
                 </Alert>
               )}
               {initialized && (
-                <RecordedDataContext.Provider value={recordedData}>
+                <ADCDataContext.Provider value={adcData}>
                   {displayPage()}
-                </RecordedDataContext.Provider>
+                </ADCDataContext.Provider>
               )}
             </>
           )}
