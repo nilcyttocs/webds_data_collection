@@ -7,8 +7,8 @@ import StopCircleIcon from "@mui/icons-material/StopCircle";
 import PauseCircleIcon from "@mui/icons-material/PauseCircle";
 
 import PlaybackComposite from "./adc_playback/PlaybackComposite";
-import PlaybackProgress from "./adc_playback/PlaybackProgress";
-import PlaybackSlider from "./adc_playback/PlaybackSlider";
+import PlaybackProgress from "./playback_controls/PlaybackProgress";
+import PlaybackSlider from "./playback_controls/PlaybackSlider";
 
 import { Page } from "./DataCollectionComponent";
 
