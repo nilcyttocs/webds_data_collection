@@ -25,7 +25,11 @@ export const Playback = (props: any): JSX.Element => {
   const adcData = useContext(ADCDataContext);
 
   const handleBackButtonClick = () => {
-    props.changePage(Page.Landing);
+    setRun(false);
+    setTimeout(() => {
+      setFrameIndex(0);
+      props.changePage(Page.Landing);
+    }, 1);
   };
 
   return (

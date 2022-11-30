@@ -16,7 +16,7 @@ import { ThemeProvider } from "@mui/material/styles";
 
 import { TouchcommReport } from "@webds/service";
 
-import Landing from "./Landing";
+import Landing, { State } from "./Landing";
 
 import Playback from "./Playback";
 
@@ -256,6 +256,8 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
   const [page, setPage] = useState<Page>(Page.Landing);
   const [online, setOnline] = useState<boolean>(false);
   const [colsRows, setColsRows] = useState<[number, number]>([0, 0]);
+  const [state, setState] = useState<State>(State.idle);
+  const [testCase, setTestCase] = useState<any>(null);
   const [testCases, setTestCases] = useState<any[]>([]);
   const [adcData, setADCData] = useState<ADCData>({ data: [] });
   const [stashedData, setStashedData] = useState<StashedData[]>([]);
@@ -280,6 +282,10 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
         return (
           <Landing
             changePage={changePage}
+            state={state}
+            setState={setState}
+            testCase={testCase}
+            setTestCase={setTestCase}
             testCases={testCases}
             setADCData={setADCData}
             online={online}

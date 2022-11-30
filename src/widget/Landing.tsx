@@ -35,7 +35,7 @@ import { requestAPI } from "../handler";
 
 import { ADCDataContext } from "./local_exports";
 
-enum State {
+export enum State {
   idle = "IDLE",
   selected = "SELECTED",
   collecting = "COLLECTING",
@@ -121,11 +121,6 @@ let eventData: any;
 let collectedData: TouchcommReport[] = [];
 let staticConfig: any = {};
 
-const initialState: State = State.idle;
-const initialTestCase: any = null;
-let stateStore: State = initialState;
-let testCaseStore: any = initialTestCase;
-
 const readStaticConfig = async () => {
   staticConfig = {};
   const dataToSend = {
@@ -191,14 +186,17 @@ const setReport = async (
   return Promise.resolve();
 };
 
-const reducer = (state: State, action: string) => {
-  const nextState = nextStateGraph[state][action];
-  return nextState !== undefined ? nextState : state;
-};
-
 export const Landing = (props: any): JSX.Element => {
-  const [state, dispatch] = useReducer(reducer, stateStore);
-  const [testCase, setTestCase] = useState<any>(testCaseStore);
+  const reducer = (state: State, action: string) => {
+    const nextState = nextStateGraph[state][action];
+    if (nextState === undefined) {
+      return state;
+    } else {
+      props.setState(nextState);
+      return nextState;
+    }
+  };
+  const [state, dispatch] = useReducer(reducer, props.state);
   const [stepsCase, setStepsCase] = useState<any>(null);
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [listRightPdding, setListRightPadding] = useState<number>(0);
@@ -234,7 +232,7 @@ export const Landing = (props: any): JSX.Element => {
     dispatch("UPLOAD");
     try {
       await uploadAttachment(
-        testCase.id,
+        props.testCase.id,
         { data: collectedData },
         DEFAULT_DATA_FILE_NAME
       );
@@ -244,7 +242,7 @@ export const Landing = (props: any): JSX.Element => {
       return;
     }
     try {
-      await uploadAttachment(testCase.id, staticConfig, "static_config.json");
+      await uploadAttachment(props.testCase.id, staticConfig, "static_config.json");
     } catch (error) {
       console.error(error);
       dispatch("UPLOAD_FAILED");
@@ -258,7 +256,7 @@ export const Landing = (props: any): JSX.Element => {
     let dataToSend: any = {
       request: "append",
       data: {
-        testCaseID: testCase.id,
+        testCaseID: props.testCase.id,
         data: { data: collectedData },
         fileName: DEFAULT_DATA_FILE_NAME
       }
@@ -276,7 +274,7 @@ export const Landing = (props: any): JSX.Element => {
     dataToSend = {
       request: "append",
       data: {
-        testCaseID: testCase.id,
+        testCaseID: props.testCase.id,
         data: staticConfig,
         fileName: "static_config.json"
       }
@@ -299,8 +297,6 @@ export const Landing = (props: any): JSX.Element => {
   };
 
   const handlePlaybackButtonClick = () => {
-    stateStore = state;
-    testCaseStore = testCase;
     props.changePage(Page.Playback);
   };
 
@@ -328,10 +324,10 @@ export const Landing = (props: any): JSX.Element => {
     ) {
       return;
     }
-    if (testCase && testCase.id === item.id) {
+    if (props.testCase && props.testCase.id === item.id) {
       return;
     }
-    setTestCase(item);
+    props.setTestCase(item);
     dispatch("SELECT");
   };
 
@@ -342,7 +338,7 @@ export const Landing = (props: any): JSX.Element => {
         message = "Select Test Case";
         break;
       case State.selected:
-        message = testCase.title;
+        message = props.testCase.title;
         break;
       case State.collecting:
         message = "Collecting...";
@@ -399,7 +395,8 @@ export const Landing = (props: any): JSX.Element => {
 
   const generateListItems = (): JSX.Element[] => {
     return props.testCases.map((item: any, index: number) => {
-      const selected = testCase === null ? false : testCase.id === item.id;
+      const selected =
+        props.testCase === null ? false : props.testCase.id === item.id;
       return (
         <div
           key={index}
@@ -557,8 +554,9 @@ export const Landing = (props: any): JSX.Element => {
   }, [adcData]);
 
   useEffect(() => {
-    stateStore = initialState;
-    testCaseStore = initialTestCase;
+    return () => {
+      removeEvent();
+    };
   }, []);
 
   return (
@@ -645,7 +643,7 @@ export const Landing = (props: any): JSX.Element => {
                 state === State.idle ||
                 state === State.selected ||
                 state === State.collecting
-                  ? () => handleTestRailButtonClick(testCase.id)
+                  ? () => handleTestRailButtonClick(props.testCase.id)
                   : () => handleOpenDialogButtonClick()
               }
             >
@@ -689,7 +687,7 @@ export const Landing = (props: any): JSX.Element => {
           state === State.selected ||
           state === State.collecting
             ? stepsCase?.title
-            : testCase.title}
+            : props.testCase.title}
         </DialogTitle>
         <DialogContent>
           {state === State.idle ||
