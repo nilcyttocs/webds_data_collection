@@ -186,16 +186,16 @@ const setReport = async (
   return Promise.resolve();
 };
 
+const reducer = (state: State, action: string) => {
+  const nextState = nextStateGraph[state][action];
+  if (nextState === undefined) {
+    return state;
+  } else {
+    return nextState;
+  }
+};
+
 export const Landing = (props: any): JSX.Element => {
-  const reducer = (state: State, action: string) => {
-    const nextState = nextStateGraph[state][action];
-    if (nextState === undefined) {
-      return state;
-    } else {
-      props.setState(nextState);
-      return nextState;
-    }
-  };
   const [state, dispatch] = useReducer(reducer, props.state);
   const [stepsCase, setStepsCase] = useState<any>(null);
   const [openDialog, setOpenDialog] = useState<boolean>(false);
@@ -556,6 +556,10 @@ export const Landing = (props: any): JSX.Element => {
   useEffect(() => {
     collectedData = adcData.data;
   }, [adcData]);
+
+  useEffect(() => {
+    props.setState(state);
+  }, [state]);
 
   useEffect(() => {
     return () => {
