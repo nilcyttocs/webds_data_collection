@@ -14,7 +14,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 
 import { ThemeProvider } from "@mui/material/styles";
 
-import { TouchcommReport } from "@webds/service";
+import { TouchcommADCReport } from "@webds/service";
 
 import Landing, { State } from "./Landing";
 
@@ -39,7 +39,7 @@ export enum Page {
 }
 
 export type ADCData = {
-  data: TouchcommReport[];
+  data: TouchcommADCReport[];
 };
 
 type StashedData = {

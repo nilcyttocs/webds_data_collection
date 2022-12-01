@@ -21,7 +21,7 @@ import DialogContent from "@mui/material/DialogContent";
 
 import { useTheme } from "@mui/material/styles";
 
-import { TouchcommReport } from "@webds/service";
+import { TouchcommADCReport } from "@webds/service";
 
 import { Page, uploadAttachment } from "./DataCollectionComponent";
 
@@ -118,7 +118,7 @@ const REPORT_FPS = 120;
 let eventSource: EventSource | undefined;
 let eventData: any;
 
-let collectedData: TouchcommReport[] = [];
+let collectedData: TouchcommADCReport[] = [];
 let staticConfig: any = {};
 
 const readStaticConfig = async () => {
@@ -242,7 +242,11 @@ export const Landing = (props: any): JSX.Element => {
       return;
     }
     try {
-      await uploadAttachment(props.testCase.id, staticConfig, "static_config.json");
+      await uploadAttachment(
+        props.testCase.id,
+        staticConfig,
+        "static_config.json"
+      );
     } catch (error) {
       console.error(error);
       dispatch("UPLOAD_FAILED");
