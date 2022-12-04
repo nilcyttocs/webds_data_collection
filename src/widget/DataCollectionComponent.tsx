@@ -38,9 +38,7 @@ export enum Page {
   Playback = "PLAYBACK"
 }
 
-export type ADCData = {
-  data: TouchcommADCReport[];
-};
+export type ADCData = TouchcommADCReport[];
 
 type StashedData = {
   testCaseID: number;
@@ -49,8 +47,6 @@ type StashedData = {
 };
 
 export const ADCDataContext = React.createContext({} as ADCData);
-
-export const selectFile: any = null;
 
 let alertMessage = "";
 
@@ -259,7 +255,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
   const [state, setState] = useState<State>(State.idle);
   const [testCase, setTestCase] = useState<any>(null);
   const [testCases, setTestCases] = useState<any[]>([]);
-  const [adcData, setADCData] = useState<ADCData>({ data: [] });
+  const [adcData, setADCData] = useState<ADCData>([]);
   const [stashedData, setStashedData] = useState<StashedData[]>([]);
   const [dequeueStash, setDequeueStash] = useState<boolean>(false);
   const [progress, setProgress] = useState<number | undefined>(undefined);

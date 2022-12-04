@@ -1,1 +1,1 @@
-export { ADCData, ADCDataContext } from "./DataCollectionComponent";
+export { ADCDataContext } from "./DataCollectionComponent";

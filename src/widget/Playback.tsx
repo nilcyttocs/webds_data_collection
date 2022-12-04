@@ -42,13 +42,13 @@ export const Playback = (props: any): JSX.Element => {
           justifyContent: "center"
         }}
       >
-        {adcData.data.length > 0 ? (
+        {adcData.length > 0 ? (
           <PlaybackComposite
             run={run}
             setRun={setRun}
             frameIndex={frameIndex}
             setFrameIndex={setFrameIndex}
-            numFrames={adcData.data.length}
+            numFrames={adcData.length}
           />
         ) : null}
       </Content>
@@ -81,21 +81,21 @@ export const Playback = (props: any): JSX.Element => {
               <div style={{ width: "100%" }}>
                 <PlaybackProgress
                   frameIndex={frameIndex}
-                  numFrames={adcData.data.length}
+                  numFrames={adcData.length}
                 />
               </div>
             ) : (
               <PlaybackSlider
                 frameIndex={frameIndex}
                 setFrameIndex={setFrameIndex}
-                numFrames={adcData.data.length}
+                numFrames={adcData.length}
                 sx={{ display: "flex", alignItems: "center" }}
               />
             )}
           </div>
           <IconButton
             color="primary"
-            disabled={adcData.data.length === 0}
+            disabled={adcData.length === 0}
             onClick={() => {
               setRun(!run);
             }}
@@ -110,7 +110,7 @@ export const Playback = (props: any): JSX.Element => {
           </IconButton>
           <IconButton
             color="primary"
-            disabled={adcData.data.length === 0}
+            disabled={adcData.length === 0}
             onClick={() => {
               setRun(false);
               setTimeout(() => {
