@@ -17,8 +17,8 @@ import DataCollectionWidget from "./widget/DataCollectionWidget";
 namespace Attributes {
   export const command = "webds_data_collection:open";
   export const id = "webds_data_collection_widget";
-  export const label = "Data Collection";
-  export const caption = "Data Collection";
+  export const label = "Test Data Collection";
+  export const caption = "Test Data Collection";
   export const category = "Touch - Assessment";
   export const rank = 40;
 }

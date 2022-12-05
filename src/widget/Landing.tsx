@@ -562,7 +562,7 @@ export const Landing = (props: any): JSX.Element => {
   return (
     <>
       <Canvas
-        title="Data Collection"
+        title="Test Data Collection"
         annotation={props.online ? null : "offline mode"}
       >
         <Content
