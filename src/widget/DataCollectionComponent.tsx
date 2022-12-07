@@ -217,7 +217,9 @@ const getTestCases = async (props: any): Promise<any[]> => {
 
   let testCases: any = undefined;
   try {
-    testCases = await requestAPI<any>(`packrat/${suiteID}/test_cases.json`);
+    testCases = await requestAPI<any>(
+      `testrail/suites/${suiteID}/test_cases.json`
+    );
   } catch (error) {
     console.error(error);
   }
@@ -230,12 +232,14 @@ const getTestCases = async (props: any): Promise<any[]> => {
       const formData = new FormData();
       formData.append("blob", content, "test_cases.json");
       try {
-        await requestAPI<any>("packrat/" + suiteID, {
+        await requestAPI<any>("testrail/suites/" + suiteID, {
           body: formData,
           method: "POST"
         });
       } catch (error) {
-        console.error(`Error - POST /webds/packrat/${suiteID}\n${error}`);
+        console.error(
+          `Error - POST /webds/testrail/suites/${suiteID}\n${error}`
+        );
       }
     } catch (error) {
       console.error(error);
