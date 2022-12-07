@@ -6,7 +6,7 @@ import PlayCircleIcon from "@mui/icons-material/PlayCircle";
 import StopCircleIcon from "@mui/icons-material/StopCircle";
 import PauseCircleIcon from "@mui/icons-material/PauseCircle";
 
-import PlaybackComposite from "./adc_playback/PlaybackComposite";
+import ADCPlayback from "./adc_plots/ADCPlayback";
 import PlaybackProgress from "./playback_controls/PlaybackProgress";
 import PlaybackSlider from "./playback_controls/PlaybackSlider";
 
@@ -43,7 +43,7 @@ export const Playback = (props: any): JSX.Element => {
         }}
       >
         {adcData.length > 0 ? (
-          <PlaybackComposite
+          <ADCPlayback
             run={run}
             setRun={setRun}
             frameIndex={frameIndex}

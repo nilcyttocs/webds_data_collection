@@ -106,18 +106,20 @@ const nextStateGraph: StateType = {
 };
 
 const SSE_CLOSED = 2;
+const REPORT_FPS = 120;
 
 const REPORT_TOUCH = 17;
 const REPORT_DELTA = 18;
 const REPORT_RAW = 19;
 const REPORT_BASELINE = 20;
-const REPORT_FPS = 120;
 
 let eventSource: EventSource | undefined;
-let eventData: any;
+let eventData: TouchcommADCReport;
 
 let collectedData: TouchcommADCReport[] = [];
 let staticConfig: any = {};
+
+let flush: boolean;
 
 const readStaticConfig = async () => {
   staticConfig = {};
@@ -139,12 +141,16 @@ const eventHandler = (event: any) => {
   if (!data || !data.report || data.report[0] !== "raw") {
     return;
   }
+  if (flush) {
+    flush = false;
+    return;
+  }
   eventData = data.report[1];
   collectedData.push(eventData);
 };
 
 const errorHandler = (error: any) => {
-  console.error(`Error on GET /webds/report\n${error}`);
+  console.error(`Error - GET /webds/report\n${error}`);
 };
 
 const removeEvent = () => {
@@ -165,9 +171,9 @@ const addEvent = () => {
   eventSource.addEventListener("error", errorHandler, false);
 };
 
-const setReport = async (
-  disable: number[],
-  enable: number[]
+const setReportTypes = async (
+  enable: number[],
+  disable: number[]
 ): Promise<void> => {
   const dataToSend = { enable, disable, fps: REPORT_FPS };
   try {
@@ -178,7 +184,7 @@ const setReport = async (
     collectedData = [];
     addEvent();
   } catch (error) {
-    console.error("Error - POST /webds/report");
+    console.error(`Error - POST /webds/report\n${error}`);
     return Promise.reject("Failed to enable/disable report types");
   }
   return Promise.resolve();
@@ -202,9 +208,9 @@ export const Landing = (props: any): JSX.Element => {
   const theme = useTheme();
 
   const handleCollectButtonClick = async () => {
-    await setReport(
-      [REPORT_TOUCH, REPORT_DELTA, REPORT_BASELINE],
-      [REPORT_RAW]
+    await setReportTypes(
+      [REPORT_RAW],
+      [REPORT_TOUCH, REPORT_DELTA, REPORT_BASELINE]
     );
     dispatch("COLLECT");
   };
@@ -554,6 +560,7 @@ export const Landing = (props: any): JSX.Element => {
   }, [state]);
 
   useEffect(() => {
+    flush = true;
     return () => {
       removeEvent();
     };
