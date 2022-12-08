@@ -37,6 +37,7 @@ export enum State {
   idle = "IDLE",
   selected = "SELECTED",
   collecting = "COLLECTING",
+  collect_failed = "COLLECT_FAILED",
   collected_valid = "COLLECTED_VALID",
   collected_invalid = "COLLECTED_INVALID",
   uploading = "UPLOADING",
@@ -61,11 +62,17 @@ const nextStateGraph: StateType = {
   },
   [State.selected]: {
     SELECT: State.selected,
-    COLLECT: State.collecting
+    COLLECT: State.collecting,
+    COLLECT_FAILED: State.collect_failed
   },
   [State.collecting]: {
     STOP_VALID: State.collected_valid,
     STOP_INVALID: State.collected_invalid
+  },
+  [State.collect_failed]: {
+    SELECT: State.selected,
+    COLLECT: State.collecting,
+    COLLECT_FAILED: State.collect_failed
   },
   [State.collected_valid]: {
     SELECT: State.selected,
@@ -108,10 +115,7 @@ const nextStateGraph: StateType = {
 const SSE_CLOSED = 2;
 const REPORT_FPS = 120;
 
-const REPORT_TOUCH = 17;
-const REPORT_DELTA = 18;
 const REPORT_RAW = 19;
-const REPORT_BASELINE = 20;
 
 let eventSource: EventSource | undefined;
 let eventData: TouchcommADCReport;
@@ -181,13 +185,27 @@ const setReportTypes = async (
       body: JSON.stringify(dataToSend),
       method: "POST"
     });
-    collectedData = [];
-    addEvent();
   } catch (error) {
     console.error(`Error - POST /webds/report\n${error}`);
     return Promise.reject("Failed to enable/disable report types");
   }
   return Promise.resolve();
+};
+
+const enableReport = async (enable: boolean) => {
+  try {
+    await setReportTypes(
+      enable ? [REPORT_RAW] : [],
+      enable ? [] : [REPORT_RAW]
+    );
+    if (enable) {
+      collectedData = [];
+      addEvent();
+    }
+  } catch (error) {
+    console.error(error);
+    return Promise.reject();
+  }
 };
 
 const reducer = (state: State, action: string) => {
@@ -208,11 +226,12 @@ export const Landing = (props: any): JSX.Element => {
   const theme = useTheme();
 
   const handleCollectButtonClick = async () => {
-    await setReportTypes(
-      [REPORT_RAW],
-      [REPORT_TOUCH, REPORT_DELTA, REPORT_BASELINE]
-    );
-    dispatch("COLLECT");
+    try {
+      await enableReport(true);
+      dispatch("COLLECT");
+    } catch {
+      dispatch("COLLECT_FAILED");
+    }
   };
 
   const handleStopButtonClick = async () => {
@@ -349,6 +368,9 @@ export const Landing = (props: any): JSX.Element => {
       case State.collecting:
         message = "Collecting...";
         break;
+      case State.collect_failed:
+        message = "Failed to collect data";
+        break;
       case State.collected_valid:
       case State.collected_invalid:
         if (collectedData.length > 1) {
@@ -368,7 +390,7 @@ export const Landing = (props: any): JSX.Element => {
         }
         break;
       case State.upload_failed:
-        message = "Upload Failed";
+        message = "Failed to upload data";
         break;
       case State.stashing:
         message = "Stashing...";
@@ -381,7 +403,7 @@ export const Landing = (props: any): JSX.Element => {
         }
         break;
       case State.stash_failed:
-        message = "Stash Failed";
+        message = "Failed to stash data";
         break;
       default:
         message = "Select Test Case";
@@ -453,6 +475,7 @@ export const Landing = (props: any): JSX.Element => {
     switch (state) {
       case State.idle:
       case State.selected:
+      case State.collect_failed:
       case State.collected_invalid:
         return (
           <Button
@@ -562,6 +585,7 @@ export const Landing = (props: any): JSX.Element => {
   useEffect(() => {
     flush = true;
     return () => {
+      enableReport(false);
       removeEvent();
     };
   }, []);
@@ -649,6 +673,7 @@ export const Landing = (props: any): JSX.Element => {
               onClick={
                 state === State.idle ||
                 state === State.selected ||
+                state === State.collect_failed ||
                 state === State.collecting
                   ? () => handleTestRailButtonClick(props.testCase.id)
                   : () => handleOpenDialogButtonClick()
@@ -669,6 +694,7 @@ export const Landing = (props: any): JSX.Element => {
               >
                 {state === State.idle ||
                 state === State.selected ||
+                state === State.collect_failed ||
                 state === State.collecting
                   ? "View in TestRail"
                   : "View Last Frame"}
@@ -682,6 +708,7 @@ export const Landing = (props: any): JSX.Element => {
         maxWidth={
           state === State.idle ||
           state === State.selected ||
+          state === State.collect_failed ||
           state === State.collecting
             ? "xs"
             : "md"
@@ -692,6 +719,7 @@ export const Landing = (props: any): JSX.Element => {
         <DialogTitle sx={{ textAlign: "center" }}>
           {state === State.idle ||
           state === State.selected ||
+          state === State.collect_failed ||
           state === State.collecting
             ? stepsCase?.title
             : props.testCase.title}
@@ -699,6 +727,7 @@ export const Landing = (props: any): JSX.Element => {
         <DialogContent>
           {state === State.idle ||
           state === State.selected ||
+          state === State.collect_failed ||
           state === State.collecting ? (
             <List dense>{generateTestSteps()}</List>
           ) : (
