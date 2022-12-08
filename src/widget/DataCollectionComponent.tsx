@@ -46,7 +46,7 @@ type StashedData = {
   fileName: string;
 };
 
-export const ADCDataContext = React.createContext({} as ADCData);
+export const ADCDataContext = React.createContext([] as ADCData);
 
 let alertMessage = "";
 
@@ -186,11 +186,13 @@ const getTestCases = async (props: any): Promise<any[]> => {
   }
   if (suiteID === undefined) {
     try {
-      const cfg = await props.service.packrat.fetch.getCfgFile();
-      const cfgSplitted = cfg.replace(/\n/g, " ").split(" ");
-      const index = cfgSplitted.indexOf(";TEST_SUITE");
-      if (index !== -1) {
-        suiteID = cfgSplitted[index + 1];
+      //const cfg = await props.service.packrat.fetch.getCfgFile();
+      //const cfgSplitted = cfg.replace(/\n/g, " ").split(" ");
+      //const index = cfgSplitted.indexOf(";TEST_SUITE");
+      //if (index !== -1) {
+      if (true) {
+        //suiteID = cfgSplitted[index + 1];
+        suiteID = 904;
         console.log(`Suite ID: ${suiteID}`);
         const content = new Blob([JSON.stringify({ testSuiteID: suiteID })], {
           type: "application/json"
