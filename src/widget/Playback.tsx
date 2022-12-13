@@ -22,7 +22,7 @@ import { ADCDataContext } from "./local_exports";
 export const Playback = (props: any): JSX.Element => {
   const [run, setRun] = useState<boolean>(false);
   const [frameIndex, setFrameIndex] = useState<number>(0);
-  const [playbackSpeed, setPlaybackSpeed] = useState<number>(2);
+  const [playbackSpeed, setPlaybackSpeed] = useState<number>(0);
 
   const adcData = useContext(ADCDataContext);
 
