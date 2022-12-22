@@ -149,7 +149,7 @@ const eventHandler = (event: any) => {
     flush = false;
     return;
   }
-  eventData = data.report[1];
+  eventData = data.report;
   collectedData.push(eventData);
 };
 
@@ -733,7 +733,7 @@ export const Landing = (props: any): JSX.Element => {
           ) : (
             collectedData.length > 0 && (
               <Typography variant="body2">
-                {JSON.stringify(collectedData[collectedData.length - 1])}
+                {JSON.stringify(collectedData[collectedData.length - 1][1])}
               </Typography>
             )
           )}
