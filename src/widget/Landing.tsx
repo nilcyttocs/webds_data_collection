@@ -628,8 +628,11 @@ export const Landing = (props: any): JSX.Element => {
           }}
         >
           {generateControls()}
-          <Stack
-            sx={{
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "end",
               position: "absolute",
               top: "50%",
               right: "24px",
@@ -700,7 +703,7 @@ export const Landing = (props: any): JSX.Element => {
                   : "View Last Frame"}
               </Typography>
             </Button>
-          </Stack>
+          </div>
         </Controls>
       </Canvas>
       <Dialog
