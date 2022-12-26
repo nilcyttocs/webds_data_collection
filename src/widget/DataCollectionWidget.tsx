@@ -10,7 +10,7 @@ export let webdsService: WebDSService;
 
 export class DataCollectionWidget extends ReactWidget {
   id: string;
-  service: WebDSService | null = null;
+  service: WebDSService;
 
   constructor(id: string, service: WebDSService) {
     super();
