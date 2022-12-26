@@ -22,6 +22,8 @@ import Playback from "./Playback";
 
 import { ProgressButton } from "./mui_extensions/Button";
 
+import { webdsService } from "./local_exports";
+
 import {
   ALERT_MESSAGE_PACKRAT_ID,
   ALERT_MESSAGE_APP_INFO,
@@ -166,10 +168,10 @@ const getTestCasesFromTestRail = async (suiteID: number): Promise<any[]> => {
   return testCases;
 };
 
-const getTestCases = async (props: any): Promise<any[]> => {
+const getTestCases = async (): Promise<any[]> => {
   let packratID: number;
   try {
-    packratID = await props.service.touchcomm.getPackratID();
+    packratID = await webdsService.touchcomm.getPackratID();
   } catch (error) {
     console.error(error);
     return Promise.reject(ALERT_MESSAGE_PACKRAT_ID);
@@ -186,7 +188,7 @@ const getTestCases = async (props: any): Promise<any[]> => {
   }
   if (suiteID === undefined) {
     try {
-      const cfg = await props.service.packrat.fetch.getCfgFile();
+      const cfg = await webdsService.packrat.fetch.getCfgFile();
       const cfgSplitted = cfg.replace(/\n/g, " ").split(" ");
       const index = cfgSplitted.indexOf(";TEST_SUITE");
       if (index !== -1) {
@@ -265,7 +267,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
   const [progress, setProgress] = useState<number | undefined>(undefined);
   const [openDialog, setOpenDialog] = useState<boolean>(true);
 
-  const webdsTheme = props.service.ui.getWebDSTheme();
+  const webdsTheme = webdsService.ui.getWebDSTheme();
 
   const showAlert = (message: string) => {
     alertMessage = message;
@@ -392,7 +394,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
 
       let testCases: any;
       try {
-        testCases = await getTestCases(props);
+        testCases = await getTestCases();
       } catch (error) {
         showAlert(error as string);
         return;
@@ -423,7 +425,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
         console.error(`Error - GET /webds/data-collection\n${error}`);
       }
     };
-    if (props.service.pinormos.isTestRailOnline()) {
+    if (webdsService.pinormos.isTestRailOnline()) {
       setOnline(true);
       checkStash();
     } else {

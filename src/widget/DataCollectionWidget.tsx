@@ -6,6 +6,8 @@ import { WebDSService } from "@webds/service";
 
 import DataCollectionComponent from "./DataCollectionComponent";
 
+export let webdsService: WebDSService;
+
 export class DataCollectionWidget extends ReactWidget {
   id: string;
   service: WebDSService | null = null;
@@ -17,9 +19,10 @@ export class DataCollectionWidget extends ReactWidget {
   }
 
   render(): JSX.Element {
+    webdsService = this.service;
     return (
       <div id={this.id + "_component"}>
-        <DataCollectionComponent service={this.service} />
+        <DataCollectionComponent />
       </div>
     );
   }
