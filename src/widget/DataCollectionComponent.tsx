@@ -22,7 +22,7 @@ import Playback from "./Playback";
 
 import { ProgressButton } from "./mui_extensions/Button";
 
-import { webdsService } from "./local_exports";
+import { requestAPI, webdsService } from "./local_exports";
 
 import {
   ALERT_MESSAGE_PACKRAT_ID,
@@ -32,8 +32,6 @@ import {
   ALERT_MESSAGE_RETRIEVE_TEST_CASES,
   TESTRAIL_URL
 } from "./constants";
-
-import { requestAPI } from "../handler";
 
 export enum Page {
   Landing = "LANDING",

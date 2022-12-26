@@ -31,7 +31,7 @@ import { Controls } from "./mui_extensions/Controls";
 
 import { DEFAULT_DATA_FILE_NAME, TESTRAIL_CASES_VIEW_URL } from "./constants";
 
-import { requestAPI } from "../handler";
+import { requestAPI } from "./local_exports";
 
 export enum State {
   idle = "IDLE",

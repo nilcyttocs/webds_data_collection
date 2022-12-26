@@ -1,5 +1,3 @@
-export { webdsService } from "./widget/DataCollectionWidget";
-
-export { ADCDataContext } from "./widget/DataCollectionComponent";
+export { webdsService } from "./index";
 
 export { requestAPI } from "./handler";
