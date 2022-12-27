@@ -190,7 +190,7 @@ const getTestCases = async (): Promise<any[]> => {
       const cfgSplitted = cfg.replace(/\n/g, " ").split(" ");
       const index = cfgSplitted.indexOf(";TEST_SUITE");
       if (index !== -1) {
-        suiteID = cfgSplitted[index + 1];
+        suiteID = Number(cfgSplitted[index + 1]);
         console.log(`Suite ID: ${suiteID}`);
         const content = new Blob([JSON.stringify({ testSuiteID: suiteID })], {
           type: "application/json"
