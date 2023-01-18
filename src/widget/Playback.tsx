@@ -1,21 +1,17 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState } from 'react';
 
-import Button from "@mui/material/Button";
+import Button from '@mui/material/Button';
+import ADCPlayback from './adc_plots/ADCPlayback';
+import PlaybackProgress from './playback_controls/PlaybackProgress';
+import PlaybackSlider from './playback_controls/PlaybackSlider';
+import PlaybackSpeed from './playback_controls/PlaybackSpeed';
 
-import ADCPlayback from "./adc_plots/ADCPlayback";
-import PlaybackProgress from "./playback_controls/PlaybackProgress";
-import PlaybackSlider from "./playback_controls/PlaybackSlider";
-import PlaybackSpeed from "./playback_controls/PlaybackSpeed";
-
-import { Page } from "./DataCollectionComponent";
-
-import { Canvas } from "./mui_extensions/Canvas";
-import { Content } from "./mui_extensions/Content";
-import { Controls } from "./mui_extensions/Controls";
-
-import { PauseRunToggle, StopButton } from "./mui_extensions/Button";
-
-import { ADCDataContext } from "./local_exports";
+import { Page } from './DataCollectionComponent';
+import { ADCDataContext } from './local_exports';
+import { PauseRunToggle, StopButton } from './mui_extensions/Button';
+import { Canvas } from './mui_extensions/Canvas';
+import { Content } from './mui_extensions/Content';
+import { Controls } from './mui_extensions/Controls';
 
 export const Playback = (props: any): JSX.Element => {
   const [run, setRun] = useState<boolean>(false);
@@ -36,10 +32,10 @@ export const Playback = (props: any): JSX.Element => {
     <Canvas title="ADC Playback">
       <Content
         sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center"
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}
       >
         {adcData.length > 0 ? (
@@ -55,31 +51,31 @@ export const Playback = (props: any): JSX.Element => {
       </Content>
       <Controls
         sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center"
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}
       >
         <div
           style={{
-            width: "100%",
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            gap: "8px"
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: '8px'
           }}
         >
           <div
             style={{
-              width: "100%",
-              margin: "0px 16px",
-              display: "flex",
-              alignItems: "center"
+              width: '100%',
+              margin: '0px 16px',
+              display: 'flex',
+              alignItems: 'center'
             }}
           >
             {run ? (
-              <div style={{ width: "100%" }}>
+              <div style={{ width: '100%' }}>
                 <PlaybackProgress
                   frameIndex={frameIndex}
                   numFrames={adcData.length}
@@ -90,7 +86,7 @@ export const Playback = (props: any): JSX.Element => {
                 frameIndex={frameIndex}
                 setFrameIndex={setFrameIndex}
                 numFrames={adcData.length}
-                sx={{ display: "flex", alignItems: "center" }}
+                sx={{ display: 'flex', alignItems: 'center' }}
               />
             )}
           </div>
@@ -110,15 +106,15 @@ export const Playback = (props: any): JSX.Element => {
               }, 1);
             }}
           />
-          <div style={{ marginLeft: "8px" }}>
+          <div style={{ marginLeft: '8px' }}>
             <PlaybackSpeed
               disabled={adcData.length === 0}
               setPlaybackSpeed={setPlaybackSpeed}
             />
           </div>
         </div>
-        <div style={{ marginTop: "24px" }}>
-          <Button onClick={handleBackButtonClick} sx={{ width: "150px" }}>
+        <div style={{ marginTop: '24px' }}>
+          <Button onClick={handleBackButtonClick} sx={{ width: '150px' }}>
             Back
           </Button>
         </div>

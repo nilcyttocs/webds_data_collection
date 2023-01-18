@@ -2,24 +2,20 @@ import {
   ILayoutRestorer,
   JupyterFrontEnd,
   JupyterFrontEndPlugin
-} from "@jupyterlab/application";
+} from '@jupyterlab/application';
+import { WidgetTracker } from '@jupyterlab/apputils';
+import { ILauncher } from '@jupyterlab/launcher';
+import { WebDSService, WebDSWidget } from '@webds/service';
 
-import { WidgetTracker } from "@jupyterlab/apputils";
-
-import { ILauncher } from "@jupyterlab/launcher";
-
-import { WebDSService, WebDSWidget } from "@webds/service";
-
-import { dataCollectionIcon } from "./icons";
-
-import DataCollectionWidget from "./widget/DataCollectionWidget";
+import { dataCollectionIcon } from './icons';
+import DataCollectionWidget from './widget/DataCollectionWidget';
 
 namespace Attributes {
-  export const command = "webds_data_collection:open";
-  export const id = "webds_data_collection_widget";
-  export const label = "Test Data Collection";
-  export const caption = "Test Data Collection";
-  export const category = "Touch - Assessment";
+  export const command = 'webds_data_collection:open';
+  export const id = 'webds_data_collection_widget';
+  export const label = 'Test Data Collection';
+  export const caption = 'Test Data Collection';
+  export const category = 'Touch - Assessment';
   export const rank = 40;
 }
 
@@ -29,7 +25,7 @@ export let webdsService: WebDSService;
  * Initialization data for the @webds/data_collection extension.
  */
 const plugin: JupyterFrontEndPlugin<void> = {
-  id: "@webds/data_collection:plugin",
+  id: '@webds/data_collection:plugin',
   autoStart: true,
   requires: [ILauncher, ILayoutRestorer, WebDSService],
   activate: (
@@ -38,7 +34,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
     restorer: ILayoutRestorer,
     service: WebDSService
   ) => {
-    console.log("JupyterLab extension @webds/data_collection is activated!");
+    console.log('JupyterLab extension @webds/data_collection is activated!');
 
     webdsService = service;
 
@@ -49,7 +45,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
       label: Attributes.label,
       caption: Attributes.caption,
       icon: (args: { [x: string]: any }) => {
-        return args["isLauncher"] ? dataCollectionIcon : undefined;
+        return args['isLauncher'] ? dataCollectionIcon : undefined;
       },
       execute: () => {
         if (!widget || widget.isDisposed) {
@@ -63,7 +59,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
         if (!tracker.has(widget)) tracker.add(widget);
 
-        if (!widget.isAttached) shell.add(widget, "main");
+        if (!widget.isAttached) shell.add(widget, 'main');
 
         shell.activateById(widget.id);
       }

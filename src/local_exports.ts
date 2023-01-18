@@ -1,3 +1,2 @@
-export { webdsService } from "./index";
-
-export { requestAPI } from "./handler";
+export { requestAPI } from './handler';
+export { webdsService } from './index';

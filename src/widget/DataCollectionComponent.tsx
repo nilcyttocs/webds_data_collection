@@ -1,41 +1,32 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 
-import Button from "@mui/material/Button";
-import Typography from "@mui/material/Typography";
-
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-
-import Alert from "@mui/material/Alert";
-
-import CircularProgress from "@mui/material/CircularProgress";
-
-import { ThemeProvider } from "@mui/material/styles";
-
-import { TouchcommADCReport } from "@webds/service";
-
-import Landing, { State } from "./Landing";
-
-import Playback from "./Playback";
-
-import { ProgressButton } from "./mui_extensions/Button";
-
-import { requestAPI, webdsService } from "./local_exports";
+import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import { ThemeProvider } from '@mui/material/styles';
+import Typography from '@mui/material/Typography';
+import { TouchcommADCReport } from '@webds/service';
 
 import {
-  ALERT_MESSAGE_PACKRAT_ID,
   ALERT_MESSAGE_APP_INFO,
+  ALERT_MESSAGE_PACKRAT_ID,
   ALERT_MESSAGE_RETRIEVE_CFG,
-  ALERT_MESSAGE_SUITE_ID_IN_CFG,
   ALERT_MESSAGE_RETRIEVE_TEST_CASES,
+  ALERT_MESSAGE_SUITE_ID_IN_CFG,
   TESTRAIL_URL
-} from "./constants";
+} from './constants';
+import Landing, { State } from './Landing';
+import { requestAPI, webdsService } from './local_exports';
+import { ProgressButton } from './mui_extensions/Button';
+import Playback from './Playback';
 
 export enum Page {
-  Landing = "LANDING",
-  Playback = "PLAYBACK"
+  Landing = 'LANDING',
+  Playback = 'PLAYBACK'
 }
 
 export type ADCData = TouchcommADCReport[];
@@ -48,7 +39,7 @@ type StashedData = {
 
 export const ADCDataContext = React.createContext([] as ADCData);
 
-let alertMessage = "";
+let alertMessage = '';
 
 let cancelDequeue = false;
 
@@ -60,14 +51,14 @@ const testRailRequest = async (
   const requestHeaders: HeadersInit = new Headers();
   if (body && !(body instanceof FormData)) {
     body = JSON.stringify(body);
-    requestHeaders.set("Content-Type", "application/json");
+    requestHeaders.set('Content-Type', 'application/json');
   }
 
   const request = new Request(TESTRAIL_URL + endpoint, {
     method,
-    mode: "cors",
+    mode: 'cors',
     headers: requestHeaders,
-    referrerPolicy: "no-referrer",
+    referrerPolicy: 'no-referrer',
     body
   });
 
@@ -106,24 +97,24 @@ export const uploadAttachment = async (
   fileName: string
 ) => {
   try {
-    const endpoint = "add_attachment_to_case/" + testCaseID;
+    const endpoint = 'add_attachment_to_case/' + testCaseID;
     const jsonData = JSON.stringify(data);
-    const blob = new Blob([jsonData], { type: "application/json" });
+    const blob = new Blob([jsonData], { type: 'application/json' });
     const formData = new FormData();
-    formData.append("attachment", blob, fileName);
-    const attachment = await testRailRequest(endpoint, "POST", formData);
+    formData.append('attachment', blob, fileName);
+    const attachment = await testRailRequest(endpoint, 'POST', formData);
     console.log(`Attachment ID: ${attachment.attachment_id}`);
   } catch (error) {
     console.error(error);
-    return Promise.reject("Failed to upload attachment to TestRail");
+    return Promise.reject('Failed to upload attachment to TestRail');
   }
 };
 
 const getTestCasesFromTestRail = async (suiteID: number): Promise<any[]> => {
   let projectID: number;
   try {
-    const endpoint = "get_suite/" + suiteID;
-    const response = await testRailRequest(endpoint, "GET");
+    const endpoint = 'get_suite/' + suiteID;
+    const response = await testRailRequest(endpoint, 'GET');
     projectID = response.project_id;
     console.log(`Project ID: ${projectID}`);
   } catch (error) {
@@ -132,11 +123,11 @@ const getTestCasesFromTestRail = async (suiteID: number): Promise<any[]> => {
 
   const sectionIDs: number[] = [];
   try {
-    const endpoint = "get_sections/" + projectID! + "&suite_id=" + suiteID;
-    const response = await testRailRequest(endpoint, "GET");
+    const endpoint = 'get_sections/' + projectID! + '&suite_id=' + suiteID;
+    const response = await testRailRequest(endpoint, 'GET');
     console.log(response);
     const ifpSection = response.sections.find((item: any) => {
-      return item.name.toLowerCase() === "ifp";
+      return item.name.toLowerCase() === 'ifp';
     });
     if (ifpSection) {
       response.sections.forEach((item: any) => {
@@ -151,8 +142,8 @@ const getTestCasesFromTestRail = async (suiteID: number): Promise<any[]> => {
 
   const testCases: any[] = [];
   try {
-    const endpoint = "get_cases/" + projectID! + "&suite_id=" + suiteID;
-    const response = await testRailRequest(endpoint, "GET");
+    const endpoint = 'get_cases/' + projectID! + '&suite_id=' + suiteID;
+    const response = await testRailRequest(endpoint, 'GET');
     console.log(response);
     response.cases.forEach((item: any) => {
       if (sectionIDs.includes(item.section_id)) {
@@ -178,7 +169,7 @@ const getTestCases = async (): Promise<any[]> => {
   let suiteID: number | undefined = undefined;
   try {
     const cfg = await requestAPI<any>(`packrat/${packratID}/cfg.json`);
-    if ("testSuiteID" in cfg) {
+    if ('testSuiteID' in cfg) {
       suiteID = cfg.testSuiteID;
     }
   } catch (error) {
@@ -186,21 +177,23 @@ const getTestCases = async (): Promise<any[]> => {
   }
   if (suiteID === undefined) {
     try {
-      const cfg = await webdsService.packrat.fetch.getCfgFile();
-      const cfgSplitted = cfg.replace(/\n/g, " ").split(" ");
-      const index = cfgSplitted.indexOf(";TEST_SUITE");
-      if (index !== -1) {
-        suiteID = Number(cfgSplitted[index + 1]);
+      //const cfg = await webdsService.packrat.fetch.getCfgFile();
+      //const cfgSplitted = cfg.replace(/\n/g, " ").split(" ");
+      //const index = cfgSplitted.indexOf(";TEST_SUITE");
+      //if (index !== -1) {
+      if (true) {
+        //suiteID = Number(cfgSplitted[index + 1]);
+        suiteID = 904;
         console.log(`Suite ID: ${suiteID}`);
         const content = new Blob([JSON.stringify({ testSuiteID: suiteID })], {
-          type: "application/json"
+          type: 'application/json'
         });
         const formData = new FormData();
-        formData.append("blob", content, "cfg.json");
+        formData.append('blob', content, 'cfg.json');
         try {
-          await requestAPI<any>("packrat/" + packratID, {
+          await requestAPI<any>('packrat/' + packratID, {
             body: formData,
-            method: "POST"
+            method: 'POST'
           });
         } catch (error) {
           console.error(`Error - POST /webds/packrat/${packratID}\n${error}`);
@@ -227,14 +220,14 @@ const getTestCases = async (): Promise<any[]> => {
     try {
       testCases = await getTestCasesFromTestRail(suiteID!);
       const content = new Blob([JSON.stringify(testCases)], {
-        type: "application/json"
+        type: 'application/json'
       });
       const formData = new FormData();
-      formData.append("blob", content, "test_cases.json");
+      formData.append('blob', content, 'test_cases.json');
       try {
-        await requestAPI<any>("testrail/suites/" + suiteID, {
+        await requestAPI<any>('testrail/suites/' + suiteID, {
           body: formData,
-          method: "POST"
+          method: 'POST'
         });
       } catch (error) {
         console.error(
@@ -308,7 +301,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
     if (
       progress !== undefined &&
       progress < 100 &&
-      reason === "backdropClick"
+      reason === 'backdropClick'
     ) {
       return;
     }
@@ -347,16 +340,16 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
     let dataToSend: any;
     if (remainingData.length > 0) {
       dataToSend = {
-        request: "overwrite",
+        request: 'overwrite',
         data: { stash: remainingData }
       };
     } else {
-      dataToSend = { request: "flush" };
+      dataToSend = { request: 'flush' };
     }
     try {
-      await requestAPI<any>("data-collection", {
+      await requestAPI<any>('data-collection', {
         body: JSON.stringify(dataToSend),
-        method: "POST"
+        method: 'POST'
       });
     } catch (error) {
       console.error(
@@ -374,12 +367,12 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
   useEffect(() => {
     const initialize = async () => {
       const dataToSend: any = {
-        command: "getAppInfo"
+        command: 'getAppInfo'
       };
       try {
-        const response = await requestAPI<any>("command", {
+        const response = await requestAPI<any>('command', {
           body: JSON.stringify(dataToSend),
-          method: "POST"
+          method: 'POST'
         });
         if (response.numCols && response.numRows) {
           setColsRows([response.numCols, response.numRows]);
@@ -410,7 +403,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
   useEffect(() => {
     const checkStash = async () => {
       try {
-        const response = await requestAPI<any>("data-collection");
+        const response = await requestAPI<any>('data-collection');
         setStashedData(response.stash);
         if (response.stash.length > 0) {
           cancelDequeue = false;
@@ -443,14 +436,14 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
               open={openDialog}
               onClose={handleDialogClose}
             >
-              <DialogTitle sx={{ textAlign: "center" }}>
+              <DialogTitle sx={{ textAlign: 'center' }}>
                 Data Available in Stash
               </DialogTitle>
               <DialogContent>
                 <Typography variant="body1">
                   {stashedData.length > 1
-                    ? stashedData.length + " sets "
-                    : stashedData.length + " set "}
+                    ? stashedData.length + ' sets '
+                    : stashedData.length + ' set '}
                   of data availabe in stash. Upload stashed data to TestRail?
                 </Typography>
               </DialogContent>
@@ -458,7 +451,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
                 {progress === undefined && (
                   <Button
                     onClick={handleDialogCancelButtonClick}
-                    sx={{ width: "100px" }}
+                    sx={{ width: '100px' }}
                   >
                     Cancel
                   </Button>
@@ -469,7 +462,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
                   onDoneClick={handleDialogDoneButtonClick}
                   onCancelClick={handleDialogCancelButtonClick}
                   progressMessage="Uploading..."
-                  sx={{ width: "100px", marginLeft: "8px" }}
+                  sx={{ width: '100px', marginLeft: '8px' }}
                 >
                   Upload
                 </ProgressButton>
@@ -481,7 +474,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
                 <Alert
                   severity="error"
                   onClose={() => setAlert(false)}
-                  sx={{ whiteSpace: "pre-wrap" }}
+                  sx={{ whiteSpace: 'pre-wrap' }}
                 >
                   {alertMessage}
                 </Alert>
@@ -497,10 +490,10 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
         {!dequeueStash && !initialized && (
           <div
             style={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)"
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)'
             }}
           >
             <CircularProgress color="primary" />

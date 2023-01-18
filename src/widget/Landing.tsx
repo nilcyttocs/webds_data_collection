@@ -1,51 +1,42 @@
-import React, { useEffect, useReducer, useState } from "react";
+import React, { useEffect, useReducer, useState } from 'react';
 
-import Button from "@mui/material/Button";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
+import InfoIcon from '@mui/icons-material/Info';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import IconButton from '@mui/material/IconButton';
+import LinearProgress from '@mui/material/LinearProgress';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemText from '@mui/material/ListItemText';
+import Stack from '@mui/material/Stack';
+import { useTheme } from '@mui/material/styles';
+import Typography from '@mui/material/Typography';
+import { TouchcommADCReport } from '@webds/service';
 
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
-import ListItemButton from "@mui/material/ListItemButton";
-
-import InfoIcon from "@mui/icons-material/Info";
-import IconButton from "@mui/material/IconButton";
-
-import LinearProgress from "@mui/material/LinearProgress";
-
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-
-import { useTheme } from "@mui/material/styles";
-
-import { TouchcommADCReport } from "@webds/service";
-
-import { Page, uploadAttachment } from "./DataCollectionComponent";
-
-import { Canvas } from "./mui_extensions/Canvas";
-import { Content } from "./mui_extensions/Content";
-import { Controls } from "./mui_extensions/Controls";
-
-import { DEFAULT_DATA_FILE_NAME, TESTRAIL_CASES_VIEW_URL } from "./constants";
-
-import { requestAPI } from "./local_exports";
+import { DEFAULT_DATA_FILE_NAME, TESTRAIL_CASES_VIEW_URL } from './constants';
+import { Page, uploadAttachment } from './DataCollectionComponent';
+import { requestAPI } from './local_exports';
+import { Canvas } from './mui_extensions/Canvas';
+import { Content } from './mui_extensions/Content';
+import { Controls } from './mui_extensions/Controls';
 
 export enum State {
-  idle = "IDLE",
-  selected = "SELECTED",
-  collecting = "COLLECTING",
-  collect_failed = "COLLECT_FAILED",
-  collected_valid = "COLLECTED_VALID",
-  collected_invalid = "COLLECTED_INVALID",
-  uploading = "UPLOADING",
-  uploaded = "UPLOADED",
-  upload_failed = "UPLOAD_FAILED",
-  stashing = "STASHING",
-  stashed = "STASHED",
-  stash_failed = "STASH_FAILED"
+  idle = 'IDLE',
+  selected = 'SELECTED',
+  collecting = 'COLLECTING',
+  collect_failed = 'COLLECT_FAILED',
+  collected_valid = 'COLLECTED_VALID',
+  collected_invalid = 'COLLECTED_INVALID',
+  uploading = 'UPLOADING',
+  uploaded = 'UPLOADED',
+  upload_failed = 'UPLOAD_FAILED',
+  stashing = 'STASHING',
+  stashed = 'STASHED',
+  stash_failed = 'STASH_FAILED'
 }
 
 type TransitionType = {
@@ -128,12 +119,12 @@ let flush: boolean;
 const readStaticConfig = async () => {
   staticConfig = {};
   const dataToSend = {
-    command: "getStaticConfig"
+    command: 'getStaticConfig'
   };
   try {
-    staticConfig = await requestAPI<any>("command", {
+    staticConfig = await requestAPI<any>('command', {
       body: JSON.stringify(dataToSend),
-      method: "POST"
+      method: 'POST'
     });
   } catch (error) {
     console.error(`Error - POST /webds/command\n${dataToSend}\n${error}`);
@@ -142,7 +133,7 @@ const readStaticConfig = async () => {
 
 const eventHandler = (event: any) => {
   const data = JSON.parse(event.data);
-  if (!data || !data.report || data.report[0] !== "raw") {
+  if (!data || !data.report || data.report[0] !== 'raw') {
     return;
   }
   if (flush) {
@@ -159,8 +150,8 @@ const errorHandler = (error: any) => {
 
 const removeEvent = () => {
   if (eventSource && eventSource.readyState !== SSE_CLOSED) {
-    eventSource.removeEventListener("report", eventHandler, false);
-    eventSource.removeEventListener("error", errorHandler, false);
+    eventSource.removeEventListener('report', eventHandler, false);
+    eventSource.removeEventListener('error', errorHandler, false);
     eventSource.close();
     eventSource = undefined;
   }
@@ -170,9 +161,9 @@ const addEvent = () => {
   if (eventSource) {
     return;
   }
-  eventSource = new window.EventSource("/webds/report");
-  eventSource.addEventListener("report", eventHandler, false);
-  eventSource.addEventListener("error", errorHandler, false);
+  eventSource = new window.EventSource('/webds/report');
+  eventSource.addEventListener('report', eventHandler, false);
+  eventSource.addEventListener('error', errorHandler, false);
 };
 
 const setReportTypes = async (
@@ -181,13 +172,13 @@ const setReportTypes = async (
 ): Promise<void> => {
   const dataToSend = { enable, disable, fps: REPORT_FPS };
   try {
-    await requestAPI<any>("report", {
+    await requestAPI<any>('report', {
       body: JSON.stringify(dataToSend),
-      method: "POST"
+      method: 'POST'
     });
   } catch (error) {
     console.error(`Error - POST /webds/report\n${error}`);
-    return Promise.reject("Failed to enable/disable report types");
+    return Promise.reject('Failed to enable/disable report types');
   }
   return Promise.resolve();
 };
@@ -228,9 +219,9 @@ export const Landing = (props: any): JSX.Element => {
   const handleCollectButtonClick = async () => {
     try {
       await enableReport(true);
-      dispatch("COLLECT");
+      dispatch('COLLECT');
     } catch {
-      dispatch("COLLECT_FAILED");
+      dispatch('COLLECT_FAILED');
     }
   };
 
@@ -239,18 +230,18 @@ export const Landing = (props: any): JSX.Element => {
     if (collectedData.length > 0) {
       await readStaticConfig();
       props.setADCData(collectedData);
-      dispatch("STOP_VALID");
+      dispatch('STOP_VALID');
     } else {
-      dispatch("STOP_INVALID");
+      dispatch('STOP_INVALID');
     }
   };
 
   const handleCancelButtonClick = () => {
-    dispatch("CANCEL");
+    dispatch('CANCEL');
   };
 
   const handleUploadButtonClick = async () => {
-    dispatch("UPLOAD");
+    dispatch('UPLOAD');
     try {
       await uploadAttachment(
         props.testCase.id,
@@ -259,27 +250,27 @@ export const Landing = (props: any): JSX.Element => {
       );
     } catch (error) {
       console.error(error);
-      dispatch("UPLOAD_FAILED");
+      dispatch('UPLOAD_FAILED');
       return;
     }
     try {
       await uploadAttachment(
         props.testCase.id,
         staticConfig,
-        "static_config.json"
+        'static_config.json'
       );
     } catch (error) {
       console.error(error);
-      dispatch("UPLOAD_FAILED");
+      dispatch('UPLOAD_FAILED');
       return;
     }
-    dispatch("UPLOADED");
+    dispatch('UPLOADED');
   };
 
   const handleStashButtonClick = async () => {
-    dispatch("STASH");
+    dispatch('STASH');
     let dataToSend: any = {
-      request: "append",
+      request: 'append',
       data: {
         testCaseID: props.testCase.id,
         data: { data: collectedData },
@@ -287,9 +278,9 @@ export const Landing = (props: any): JSX.Element => {
       }
     };
     try {
-      await requestAPI<any>("data-collection", {
+      await requestAPI<any>('data-collection', {
         body: JSON.stringify(dataToSend),
-        method: "POST"
+        method: 'POST'
       });
     } catch (error) {
       console.error(
@@ -297,28 +288,28 @@ export const Landing = (props: any): JSX.Element => {
       );
     }
     dataToSend = {
-      request: "append",
+      request: 'append',
       data: {
         testCaseID: props.testCase.id,
         data: staticConfig,
-        fileName: "static_config.json"
+        fileName: 'static_config.json'
       }
     };
     try {
-      await requestAPI<any>("data-collection", {
+      await requestAPI<any>('data-collection', {
         body: JSON.stringify(dataToSend),
-        method: "POST"
+        method: 'POST'
       });
     } catch (error) {
       console.error(
         `Error - POST /webds/data-collection\n${dataToSend}\n${error}`
       );
     }
-    dispatch("STASHED");
+    dispatch('STASHED');
   };
 
   const handleDoneButtonClick = () => {
-    dispatch("DONE");
+    dispatch('DONE');
   };
 
   const handlePlaybackButtonClick = () => {
@@ -338,7 +329,7 @@ export const Landing = (props: any): JSX.Element => {
   };
 
   const handleTestRailButtonClick = (testCaseID: number) => {
-    window.open(TESTRAIL_CASES_VIEW_URL + testCaseID, "_blank")?.focus();
+    window.open(TESTRAIL_CASES_VIEW_URL + testCaseID, '_blank')?.focus();
   };
 
   const handleListItemClick = (item: any) => {
@@ -353,23 +344,23 @@ export const Landing = (props: any): JSX.Element => {
       return;
     }
     props.setTestCase(item);
-    dispatch("SELECT");
+    dispatch('SELECT');
   };
 
   const generateMessage = (): JSX.Element => {
     let message: string;
     switch (state) {
       case State.idle:
-        message = "Select Test Case";
+        message = 'Select Test Case';
         break;
       case State.selected:
         message = props.testCase.title;
         break;
       case State.collecting:
-        message = "Collecting...";
+        message = 'Collecting...';
         break;
       case State.collect_failed:
-        message = "Failed to collect data";
+        message = 'Failed to collect data';
         break;
       case State.collected_valid:
       case State.collected_invalid:
@@ -380,7 +371,7 @@ export const Landing = (props: any): JSX.Element => {
         }
         break;
       case State.uploading:
-        message = "Uploading...";
+        message = 'Uploading...';
         break;
       case State.uploaded:
         if (collectedData.length > 1) {
@@ -390,10 +381,10 @@ export const Landing = (props: any): JSX.Element => {
         }
         break;
       case State.upload_failed:
-        message = "Failed to upload data";
+        message = 'Failed to upload data';
         break;
       case State.stashing:
-        message = "Stashing...";
+        message = 'Stashing...';
         break;
       case State.stashed:
         if (collectedData.length > 1) {
@@ -403,16 +394,16 @@ export const Landing = (props: any): JSX.Element => {
         }
         break;
       case State.stash_failed:
-        message = "Failed to stash data";
+        message = 'Failed to stash data';
         break;
       default:
-        message = "Select Test Case";
+        message = 'Select Test Case';
     }
     return (
       <Typography
         sx={
           state === State.upload_failed || state === State.stash_failed
-            ? { color: "red" }
+            ? { color: 'red' }
             : null
         }
       >
@@ -429,7 +420,7 @@ export const Landing = (props: any): JSX.Element => {
         <div
           key={index}
           style={{
-            position: "relative"
+            position: 'relative'
           }}
         >
           <ListItem
@@ -449,7 +440,7 @@ export const Landing = (props: any): JSX.Element => {
             <ListItemButton
               selected={selected}
               onClick={() => handleListItemClick(item)}
-              sx={{ marginRight: "16px", padding: "0px 16px" }}
+              sx={{ marginRight: '16px', padding: '0px 16px' }}
             >
               <ListItemText primary={item.title} />
             </ListItemButton>
@@ -460,9 +451,9 @@ export const Landing = (props: any): JSX.Element => {
               state === State.stashing) && (
               <LinearProgress
                 sx={{
-                  position: "absolute",
-                  bottom: "0px",
-                  width: "100%"
+                  position: 'absolute',
+                  bottom: '0px',
+                  width: '100%'
                 }}
               />
             )}
@@ -481,7 +472,7 @@ export const Landing = (props: any): JSX.Element => {
           <Button
             disabled={state === State.idle}
             onClick={() => handleCollectButtonClick()}
-            sx={{ width: "150px" }}
+            sx={{ width: '150px' }}
           >
             Collect
           </Button>
@@ -490,7 +481,7 @@ export const Landing = (props: any): JSX.Element => {
         return (
           <Button
             onClick={() => handleStopButtonClick()}
-            sx={{ width: "150px" }}
+            sx={{ width: '150px' }}
           >
             Stop
           </Button>
@@ -506,7 +497,7 @@ export const Landing = (props: any): JSX.Element => {
               disabled={state === State.uploading || state === State.stashing}
               onClick={() => handleCancelButtonClick()}
               sx={{
-                width: "150px"
+                width: '150px'
               }}
             >
               Cancel
@@ -516,7 +507,7 @@ export const Landing = (props: any): JSX.Element => {
                 disabled={state === State.uploading}
                 onClick={() => handleUploadButtonClick()}
                 sx={{
-                  width: "150px"
+                  width: '150px'
                 }}
               >
                 Upload
@@ -526,7 +517,7 @@ export const Landing = (props: any): JSX.Element => {
                 disabled={state === State.stashing}
                 onClick={() => handleStashButtonClick()}
                 sx={{
-                  width: "150px"
+                  width: '150px'
                 }}
               >
                 Stash
@@ -539,14 +530,14 @@ export const Landing = (props: any): JSX.Element => {
         return (
           <Button
             onClick={() => handleDoneButtonClick()}
-            sx={{ width: "150px" }}
+            sx={{ width: '150px' }}
           >
             Done
           </Button>
         );
       default:
         return (
-          <Button disabled sx={{ width: "150px" }}>
+          <Button disabled sx={{ width: '150px' }}>
             Collect
           </Button>
         );
@@ -557,8 +548,8 @@ export const Landing = (props: any): JSX.Element => {
     return stepsCase?.custom_steps
       .match(/(\d+\.\s?)?(.*?)(\r\n|\r|\n|$)/g)
       .map((item: string, index: number) => {
-        item = item.replace(/(\r\n|\r|\n)/gm, "").trim();
-        if (item === "") {
+        item = item.replace(/(\r\n|\r|\n)/gm, '').trim();
+        if (item === '') {
           return null;
         }
         return (
@@ -570,7 +561,7 @@ export const Landing = (props: any): JSX.Element => {
   };
 
   useEffect(() => {
-    const element = document.getElementById("webds_data_collection_test_list");
+    const element = document.getElementById('webds_data_collection_test_list');
     if (element && element.scrollHeight > element.clientHeight) {
       setListRightPadding(8);
     } else {
@@ -594,17 +585,17 @@ export const Landing = (props: any): JSX.Element => {
     <>
       <Canvas
         title="Test Data Collection"
-        annotation={props.online ? null : "offline mode"}
+        annotation={props.online ? null : 'offline mode'}
       >
         <Content
           sx={{
-            display: "flex",
-            flexDirection: "column"
+            display: 'flex',
+            flexDirection: 'column'
           }}
         >
           <div
             style={{
-              margin: "0px auto 24px auto"
+              margin: '0px auto 24px auto'
             }}
           >
             {generateMessage()}
@@ -613,30 +604,30 @@ export const Landing = (props: any): JSX.Element => {
             id="webds_data_collection_test_list"
             style={{
               paddingRight: listRightPdding,
-              overflow: "auto"
+              overflow: 'auto'
             }}
           >
-            <List sx={{ padding: "0px" }}>{generateListItems()}</List>
+            <List sx={{ padding: '0px' }}>{generateListItems()}</List>
           </div>
         </Content>
         <Controls
           sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center"
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}
         >
           {generateControls()}
           <div
             style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "end",
-              position: "absolute",
-              top: "50%",
-              right: "24px",
-              transform: "translate(0%, -50%)"
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'end',
+              position: 'absolute',
+              top: '50%',
+              right: '24px',
+              transform: 'translate(0%, -50%)'
             }}
           >
             {(state === State.collected_valid ||
@@ -699,8 +690,8 @@ export const Landing = (props: any): JSX.Element => {
                 state === State.selected ||
                 state === State.collect_failed ||
                 state === State.collecting
-                  ? "View in TestRail"
-                  : "View Last Frame"}
+                  ? 'View in TestRail'
+                  : 'View Last Frame'}
               </Typography>
             </Button>
           </div>
@@ -713,13 +704,13 @@ export const Landing = (props: any): JSX.Element => {
           state === State.selected ||
           state === State.collect_failed ||
           state === State.collecting
-            ? "xs"
-            : "md"
+            ? 'xs'
+            : 'md'
         }
         open={openDialog}
         onClose={handleDialogClose}
       >
-        <DialogTitle sx={{ textAlign: "center" }}>
+        <DialogTitle sx={{ textAlign: 'center' }}>
           {state === State.idle ||
           state === State.selected ||
           state === State.collect_failed ||
@@ -742,7 +733,7 @@ export const Landing = (props: any): JSX.Element => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDialogOkayButtonClick} sx={{ width: "100px" }}>
+          <Button onClick={handleDialogOkayButtonClick} sx={{ width: '100px' }}>
             Okay
           </Button>
         </DialogActions>
