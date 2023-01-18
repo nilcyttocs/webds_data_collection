@@ -1,6 +1,6 @@
 {
   "name": "@webds/data_collection",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "webds_data_collection",
   "keywords": [
     "jupyter",
@@ -52,8 +52,7 @@
     "watch:src": "tsc -w",
     "watch:labextension": "jupyter labextension watch ."
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "@jupyterlab/builder": "^3.1.0",
     "@typescript-eslint/eslint-plugin": "^4.8.1",
