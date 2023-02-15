@@ -18,11 +18,7 @@ import Typography from '@mui/material/Typography';
 import { TouchcommADCReport } from '@webds/service';
 
 import { DEFAULT_DATA_FILE_NAME, TESTRAIL_CASES_VIEW_URL } from './constants';
-import {
-  Page,
-  updateTestCases,
-  uploadAttachment
-} from './DataCollectionComponent';
+import { Page, uploadAttachment } from './DataCollectionComponent';
 import { requestAPI } from './local_exports';
 import { Canvas } from './mui_extensions/Canvas';
 import { Content } from './mui_extensions/Content';
@@ -53,9 +49,11 @@ type StateType = {
 
 const nextStateGraph: StateType = {
   [State.idle]: {
+    RELOAD: State.idle,
     SELECT: State.selected
   },
   [State.selected]: {
+    RELOAD: State.idle,
     SELECT: State.selected,
     COLLECT: State.collecting,
     COLLECT_FAILED: State.collect_failed
@@ -65,6 +63,7 @@ const nextStateGraph: StateType = {
     STOP_INVALID: State.collected_invalid
   },
   [State.collect_failed]: {
+    RELOAD: State.idle,
     SELECT: State.selected,
     COLLECT: State.collecting,
     COLLECT_FAILED: State.collect_failed
@@ -571,6 +570,7 @@ export const Landing = (props: any): JSX.Element => {
     } else {
       setListRightPadding(0);
     }
+    dispatch('RELOAD');
   }, [props.testCases]);
 
   useEffect(() => {
@@ -686,7 +686,7 @@ export const Landing = (props: any): JSX.Element => {
                 state === State.selected ||
                 state === State.collect_failed ||
                 state === State.collecting
-                  ? () => updateTestCases()
+                  ? () => props.reloadTestCases()
                   : () => handleOpenDialogButtonClick()
               }
             >

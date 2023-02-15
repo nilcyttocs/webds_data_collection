@@ -159,7 +159,7 @@ const getTestCasesFromTestRail = async (): Promise<any[]> => {
   return testCases;
 };
 
-export const updateTestCases = async (): Promise<any[]> => {
+const updateTestCases = async (): Promise<any[]> => {
   try {
     const testCases = await getTestCasesFromTestRail();
     const content = new Blob([JSON.stringify(testCases)], {
@@ -275,6 +275,19 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
     setPage(newPage);
   };
 
+  const reloadTestCases = async () => {
+    let testCases: any;
+    try {
+      testCases = await updateTestCases();
+    } catch (error) {
+      console.error(error);
+      showAlert(ALERT_MESSAGE_RETRIEVE_TEST_CASES);
+      return;
+    }
+    setTestCases(testCases);
+    setTestCase(null);
+  };
+
   const displayPage = (): JSX.Element | null => {
     switch (page) {
       case Page.Landing:
@@ -288,6 +301,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
             testCases={testCases}
             setADCData={setADCData}
             online={online}
+            reloadTestCases={reloadTestCases}
           />
         );
       case Page.Playback:
