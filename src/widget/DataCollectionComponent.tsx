@@ -157,6 +157,28 @@ const getTestCasesFromTestRail = async (suiteID: number): Promise<any[]> => {
   return testCases;
 };
 
+const updateTestCases = async (suiteID: number): Promise<any[]> => {
+  try {
+    const testCases = await getTestCasesFromTestRail(suiteID);
+    const content = new Blob([JSON.stringify(testCases)], {
+      type: 'application/json'
+    });
+    const formData = new FormData();
+    formData.append('blob', content, 'test_cases.json');
+    try {
+      await requestAPI<any>('testrail/suites/' + suiteID, {
+        body: formData,
+        method: 'POST'
+      });
+    } catch (error) {
+      console.error(`Error - POST /webds/testrail/suites/${suiteID}\n${error}`);
+    }
+    return testCases;
+  } catch (error) {
+    return Promise.reject(error);
+  }
+};
+
 const getTestCases = async (): Promise<any[]> => {
   let packratID: number;
   try {
@@ -216,22 +238,7 @@ const getTestCases = async (): Promise<any[]> => {
   }
   if (testCases === undefined) {
     try {
-      testCases = await getTestCasesFromTestRail(suiteID!);
-      const content = new Blob([JSON.stringify(testCases)], {
-        type: 'application/json'
-      });
-      const formData = new FormData();
-      formData.append('blob', content, 'test_cases.json');
-      try {
-        await requestAPI<any>('testrail/suites/' + suiteID, {
-          body: formData,
-          method: 'POST'
-        });
-      } catch (error) {
-        console.error(
-          `Error - POST /webds/testrail/suites/${suiteID}\n${error}`
-        );
-      }
+      testCases = await updateTestCases(suiteID!);
     } catch (error) {
       console.error(error);
       return Promise.reject(ALERT_MESSAGE_RETRIEVE_TEST_CASES);
