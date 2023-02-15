@@ -263,6 +263,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
   const [dequeueStash, setDequeueStash] = useState<boolean>(false);
   const [progress, setProgress] = useState<number | undefined>(undefined);
   const [openDialog, setOpenDialog] = useState<boolean>(true);
+  const [reloading, setReloading] = useState<boolean>(false);
 
   const webdsTheme = webdsService.ui.getWebDSTheme();
 
@@ -276,16 +277,24 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
   };
 
   const reloadTestCases = async () => {
-    let testCases: any;
+    const backupTestCases = testCases;
+    let newTestCases;
+    setTestCase(null);
+    setTestCases([]);
+    setReloading(true);
     try {
-      testCases = await updateTestCases();
+      newTestCases = await updateTestCases();
     } catch (error) {
       console.error(error);
       showAlert(ALERT_MESSAGE_RETRIEVE_TEST_CASES);
-      return;
+    } finally {
+      setReloading(false);
+      if (newTestCases !== undefined) {
+        setTestCases(newTestCases);
+      } else {
+        setTestCases(backupTestCases);
+      }
     }
-    setTestCases(testCases);
-    setTestCase(null);
   };
 
   const displayPage = (): JSX.Element | null => {
@@ -507,7 +516,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
             </>
           )}
         </div>
-        {!dequeueStash && !initialized && (
+        {((!dequeueStash && !initialized) || reloading) && (
           <div
             style={{
               position: 'absolute',

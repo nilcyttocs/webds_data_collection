@@ -354,7 +354,7 @@ export const Landing = (props: any): JSX.Element => {
     let message: string;
     switch (state) {
       case State.idle:
-        message = 'Select Test Case';
+        message = props.testCases.length ? 'Select Test Case' : '';
         break;
       case State.selected:
         message = props.testCase.title;
