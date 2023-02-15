@@ -43,6 +43,8 @@ let alertMessage = '';
 
 let cancelDequeue = false;
 
+let suiteID: number;
+
 const testRailRequest = async (
   endpoint: string,
   method: string,
@@ -110,7 +112,7 @@ export const uploadAttachment = async (
   }
 };
 
-const getTestCasesFromTestRail = async (suiteID: number): Promise<any[]> => {
+const getTestCasesFromTestRail = async (): Promise<any[]> => {
   let projectID: number;
   try {
     const endpoint = 'get_suite/' + suiteID;
@@ -157,9 +159,9 @@ const getTestCasesFromTestRail = async (suiteID: number): Promise<any[]> => {
   return testCases;
 };
 
-const updateTestCases = async (suiteID: number): Promise<any[]> => {
+export const updateTestCases = async (): Promise<any[]> => {
   try {
-    const testCases = await getTestCasesFromTestRail(suiteID);
+    const testCases = await getTestCasesFromTestRail();
     const content = new Blob([JSON.stringify(testCases)], {
       type: 'application/json'
     });
@@ -188,7 +190,6 @@ const getTestCases = async (): Promise<any[]> => {
     return Promise.reject(ALERT_MESSAGE_PACKRAT_ID);
   }
 
-  let suiteID: number | undefined = undefined;
   try {
     const cfg = await requestAPI<any>(`packrat/${packratID}/cfg.json`);
     if ('testSuiteID' in cfg) {
@@ -238,7 +239,7 @@ const getTestCases = async (): Promise<any[]> => {
   }
   if (testCases === undefined) {
     try {
-      testCases = await updateTestCases(suiteID!);
+      testCases = await updateTestCases();
     } catch (error) {
       console.error(error);
       return Promise.reject(ALERT_MESSAGE_RETRIEVE_TEST_CASES);

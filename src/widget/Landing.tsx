@@ -18,7 +18,11 @@ import Typography from '@mui/material/Typography';
 import { TouchcommADCReport } from '@webds/service';
 
 import { DEFAULT_DATA_FILE_NAME, TESTRAIL_CASES_VIEW_URL } from './constants';
-import { Page, uploadAttachment } from './DataCollectionComponent';
+import {
+  Page,
+  updateTestCases,
+  uploadAttachment
+} from './DataCollectionComponent';
 import { requestAPI } from './local_exports';
 import { Canvas } from './mui_extensions/Canvas';
 import { Content } from './mui_extensions/Content';
@@ -630,31 +634,6 @@ export const Landing = (props: any): JSX.Element => {
               transform: 'translate(0%, -50%)'
             }}
           >
-            {(state === State.collected_valid ||
-              state === State.uploading ||
-              state === State.uploaded ||
-              state === State.upload_failed ||
-              state === State.stashing ||
-              state === State.stashed ||
-              state === State.stash_failed) && (
-              <Button
-                variant="text"
-                disabled={state === State.uploading || state === State.stashing}
-                onClick={() => handlePlaybackButtonClick()}
-              >
-                <Typography
-                  variant="underline"
-                  sx={{
-                    color:
-                      state === State.uploading || state === State.stashing
-                        ? theme.palette.text.disabled
-                        : theme.palette.text.primary
-                  }}
-                >
-                  Playback
-                </Typography>
-              </Button>
-            )}
             <Button
               variant="text"
               disabled={
@@ -670,7 +649,7 @@ export const Landing = (props: any): JSX.Element => {
                 state === State.collect_failed ||
                 state === State.collecting
                   ? () => handleTestRailButtonClick(props.testCase.id)
-                  : () => handleOpenDialogButtonClick()
+                  : () => handlePlaybackButtonClick()
               }
             >
               <Typography
@@ -691,6 +670,43 @@ export const Landing = (props: any): JSX.Element => {
                 state === State.collect_failed ||
                 state === State.collecting
                   ? 'View in TestRail'
+                  : 'Playback'}
+              </Typography>
+            </Button>
+            <Button
+              variant="text"
+              disabled={
+                state === State.collecting ||
+                state === State.uploading ||
+                state === State.stashing ||
+                state === State.collected_invalid
+              }
+              onClick={
+                state === State.idle ||
+                state === State.selected ||
+                state === State.collect_failed ||
+                state === State.collecting
+                  ? () => updateTestCases()
+                  : () => handleOpenDialogButtonClick()
+              }
+            >
+              <Typography
+                variant="underline"
+                sx={{
+                  color:
+                    state === State.collecting ||
+                    state === State.uploading ||
+                    state === State.stashing ||
+                    state === State.collected_invalid
+                      ? theme.palette.text.disabled
+                      : theme.palette.text.primary
+                }}
+              >
+                {state === State.idle ||
+                state === State.selected ||
+                state === State.collect_failed ||
+                state === State.collecting
+                  ? 'Reload Test Cases'
                   : 'View Last Frame'}
               </Typography>
             </Button>
