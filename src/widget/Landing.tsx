@@ -571,7 +571,6 @@ export const Landing = (props: any): JSX.Element => {
     } else {
       setListRightPadding(0);
     }
-    dispatch('RELOAD');
   }, [props.testCases]);
 
   useEffect(() => {
@@ -688,7 +687,10 @@ export const Landing = (props: any): JSX.Element => {
                 state === State.selected ||
                 state === State.collect_failed ||
                 state === State.collecting
-                  ? () => props.reloadTestCases()
+                  ? () => {
+                      dispatch('RELOAD');
+                      props.reloadTestCases();
+                    }
                   : () => handleOpenDialogButtonClick()
               }
             >

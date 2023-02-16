@@ -280,8 +280,8 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
   const reloadTestCases = async () => {
     const backupTestCases = testCases;
     let newTestCases;
-    setTestCase(null);
     setTestCases([]);
+    setTestCase(null);
     setReloading(true);
     try {
       newTestCases = await updateTestCases();
