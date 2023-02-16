@@ -14,6 +14,7 @@ import { TouchcommADCReport } from '@webds/service';
 import {
   ALERT_MESSAGE_APP_INFO,
   ALERT_MESSAGE_PACKRAT_ID,
+  ALERT_MESSAGE_RELOAD_TEST_CASES,
   ALERT_MESSAGE_RETRIEVE_CFG,
   ALERT_MESSAGE_RETRIEVE_TEST_CASES,
   ALERT_MESSAGE_SUITE_ID_IN_CFG,
@@ -286,7 +287,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
       newTestCases = await updateTestCases();
     } catch (error) {
       console.error(error);
-      showAlert(ALERT_MESSAGE_RETRIEVE_TEST_CASES);
+      showAlert(ALERT_MESSAGE_RELOAD_TEST_CASES);
     } finally {
       setReloading(false);
       if (newTestCases !== undefined) {

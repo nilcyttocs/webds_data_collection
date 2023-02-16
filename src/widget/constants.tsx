@@ -12,6 +12,9 @@ export const ALERT_MESSAGE_SUITE_ID_IN_CFG =
 export const ALERT_MESSAGE_RETRIEVE_TEST_CASES =
   'Failed to retrieve tests cases.';
 
+export const ALERT_MESSAGE_RELOAD_TEST_CASES =
+  'Failed to reload tests cases from TestRail.';
+
 export const TESTRAIL_URL = 'http://nexus.synaptics.com:8083/TestRail/';
 
 export const TESTRAIL_CASES_VIEW_URL =
