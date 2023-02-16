@@ -21,6 +21,7 @@ import { DEFAULT_DATA_FILE_NAME, TESTRAIL_CASES_VIEW_URL } from './constants';
 import { Page, uploadAttachment } from './DataCollectionComponent';
 import { requestAPI } from './local_exports';
 import { Canvas } from './mui_extensions/Canvas';
+import { CANVAS_ATTRS } from './mui_extensions/constants';
 import { Content } from './mui_extensions/Content';
 import { Controls } from './mui_extensions/Controls';
 
@@ -593,6 +594,7 @@ export const Landing = (props: any): JSX.Element => {
       >
         <Content
           sx={{
+            height: CANVAS_ATTRS.MIN_HEIGHT_CONTENT + 'px',
             display: 'flex',
             flexDirection: 'column'
           }}
