@@ -30,6 +30,7 @@ export enum State {
   selected = 'SELECTED',
   collecting = 'COLLECTING',
   collect_failed = 'COLLECT_FAILED',
+  reloading = 'RELOADING',
   collected_valid = 'COLLECTED_VALID',
   collected_invalid = 'COLLECTED_INVALID',
   uploading = 'UPLOADING',
@@ -50,11 +51,11 @@ type StateType = {
 
 const nextStateGraph: StateType = {
   [State.idle]: {
-    RELOAD: State.idle,
+    RELOAD: State.reloading,
     SELECT: State.selected
   },
   [State.selected]: {
-    RELOAD: State.idle,
+    RELOAD: State.reloading,
     SELECT: State.selected,
     COLLECT: State.collecting,
     COLLECT_FAILED: State.collect_failed
@@ -64,10 +65,13 @@ const nextStateGraph: StateType = {
     STOP_INVALID: State.collected_invalid
   },
   [State.collect_failed]: {
-    RELOAD: State.idle,
+    RELOAD: State.reloading,
     SELECT: State.selected,
     COLLECT: State.collecting,
     COLLECT_FAILED: State.collect_failed
+  },
+  [State.reloading]: {
+    RELOADED: State.idle
   },
   [State.collected_valid]: {
     SELECT: State.selected,
@@ -366,6 +370,9 @@ export const Landing = (props: any): JSX.Element => {
       case State.collect_failed:
         message = 'Failed to collect data';
         break;
+      case State.reloading:
+        message = '';
+        break;
       case State.collected_valid:
       case State.collected_invalid:
         if (collectedData.length > 1) {
@@ -472,9 +479,10 @@ export const Landing = (props: any): JSX.Element => {
       case State.selected:
       case State.collect_failed:
       case State.collected_invalid:
+      case State.reloading:
         return (
           <Button
-            disabled={state === State.idle}
+            disabled={state === State.idle || state === State.reloading}
             onClick={() => handleCollectButtonClick()}
             sx={{ width: '150px' }}
           >
@@ -571,6 +579,7 @@ export const Landing = (props: any): JSX.Element => {
     } else {
       setListRightPadding(0);
     }
+    dispatch('RELOADED');
   }, [props.testCases]);
 
   useEffect(() => {
@@ -605,15 +614,17 @@ export const Landing = (props: any): JSX.Element => {
           >
             {generateMessage()}
           </div>
-          <div
-            id="webds_data_collection_test_list"
-            style={{
-              paddingRight: listRightPdding,
-              overflow: 'auto'
-            }}
-          >
-            <List sx={{ padding: '0px' }}>{generateListItems()}</List>
-          </div>
+          {state !== State.reloading && (
+            <div
+              id="webds_data_collection_test_list"
+              style={{
+                paddingRight: listRightPdding,
+                overflow: 'auto'
+              }}
+            >
+              <List sx={{ padding: '0px' }}>{generateListItems()}</List>
+            </div>
+          )}
         </Content>
         <Controls
           sx={{
@@ -642,13 +653,11 @@ export const Landing = (props: any): JSX.Element => {
                 state === State.collecting ||
                 state === State.uploading ||
                 state === State.stashing ||
-                state === State.collected_invalid
+                state === State.collected_invalid ||
+                state === State.reloading
               }
               onClick={
-                state === State.idle ||
-                state === State.selected ||
-                state === State.collect_failed ||
-                state === State.collecting
+                state === State.selected || state === State.collect_failed
                   ? () => handleTestRailButtonClick(props.testCase.id)
                   : () => handlePlaybackButtonClick()
               }
@@ -661,7 +670,8 @@ export const Landing = (props: any): JSX.Element => {
                     state === State.collecting ||
                     state === State.uploading ||
                     state === State.stashing ||
-                    state === State.collected_invalid
+                    state === State.collected_invalid ||
+                    state === State.reloading
                       ? theme.palette.text.disabled
                       : theme.palette.text.primary
                 }}
@@ -669,7 +679,8 @@ export const Landing = (props: any): JSX.Element => {
                 {state === State.idle ||
                 state === State.selected ||
                 state === State.collect_failed ||
-                state === State.collecting
+                state === State.collecting ||
+                state === State.reloading
                   ? 'View in TestRail'
                   : 'Playback'}
               </Typography>
@@ -680,16 +691,16 @@ export const Landing = (props: any): JSX.Element => {
                 state === State.collecting ||
                 state === State.uploading ||
                 state === State.stashing ||
-                state === State.collected_invalid
+                state === State.collected_invalid ||
+                state === State.reloading
               }
               onClick={
                 state === State.idle ||
                 state === State.selected ||
-                state === State.collect_failed ||
-                state === State.collecting
+                state === State.collect_failed
                   ? () => {
-                      dispatch('RELOAD');
                       props.reloadTestCases();
+                      dispatch('RELOAD');
                     }
                   : () => handleOpenDialogButtonClick()
               }
@@ -701,7 +712,8 @@ export const Landing = (props: any): JSX.Element => {
                     state === State.collecting ||
                     state === State.uploading ||
                     state === State.stashing ||
-                    state === State.collected_invalid
+                    state === State.collected_invalid ||
+                    state === State.reloading
                       ? theme.palette.text.disabled
                       : theme.palette.text.primary
                 }}
@@ -709,7 +721,8 @@ export const Landing = (props: any): JSX.Element => {
                 {state === State.idle ||
                 state === State.selected ||
                 state === State.collect_failed ||
-                state === State.collecting
+                state === State.collecting ||
+                state === State.reloading
                   ? 'Reload Test Cases'
                   : 'View Last Frame'}
               </Typography>
@@ -723,7 +736,8 @@ export const Landing = (props: any): JSX.Element => {
           state === State.idle ||
           state === State.selected ||
           state === State.collect_failed ||
-          state === State.collecting
+          state === State.collecting ||
+          state === State.reloading
             ? 'xs'
             : 'md'
         }
@@ -734,7 +748,8 @@ export const Landing = (props: any): JSX.Element => {
           {state === State.idle ||
           state === State.selected ||
           state === State.collect_failed ||
-          state === State.collecting
+          state === State.collecting ||
+          state === State.reloading
             ? stepsCase?.title
             : props.testCase.title}
         </DialogTitle>
@@ -742,7 +757,8 @@ export const Landing = (props: any): JSX.Element => {
           {state === State.idle ||
           state === State.selected ||
           state === State.collect_failed ||
-          state === State.collecting ? (
+          state === State.collecting ||
+          state === State.reloading ? (
             <List dense>{generateTestSteps()}</List>
           ) : (
             collectedData.length > 0 && (
