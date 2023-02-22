@@ -635,6 +635,38 @@ export const Landing = (props: any): JSX.Element => {
           }}
         >
           {generateControls()}
+          {(state === State.idle ||
+            state === State.selected ||
+            state === State.collect_failed ||
+            state === State.collecting ||
+            state === State.reloading) && (
+            <Button
+              variant="text"
+              disabled={state === State.collecting || state === State.reloading}
+              onClick={() => {
+                props.reloadTestCases();
+                dispatch('RELOAD');
+              }}
+              sx={{
+                position: 'absolute',
+                top: '50%',
+                left: '24px',
+                transform: 'translate(0%, -50%)'
+              }}
+            >
+              <Typography
+                variant="underline"
+                sx={{
+                  color:
+                    state === State.collecting || state === State.reloading
+                      ? theme.palette.text.disabled
+                      : theme.palette.text.primary
+                }}
+              >
+                Reload Test Cases
+              </Typography>
+            </Button>
+          )}
           <div
             style={{
               display: 'flex',
@@ -685,48 +717,37 @@ export const Landing = (props: any): JSX.Element => {
                   : 'Playback'}
               </Typography>
             </Button>
-            <Button
-              variant="text"
-              disabled={
-                state === State.collecting ||
-                state === State.uploading ||
-                state === State.stashing ||
-                state === State.collected_invalid ||
-                state === State.reloading
-              }
-              onClick={
-                state === State.idle ||
-                state === State.selected ||
-                state === State.collect_failed
-                  ? () => {
-                      props.reloadTestCases();
-                      dispatch('RELOAD');
-                    }
-                  : () => handleOpenDialogButtonClick()
-              }
-            >
-              <Typography
-                variant="underline"
-                sx={{
-                  color:
-                    state === State.collecting ||
-                    state === State.uploading ||
-                    state === State.stashing ||
-                    state === State.collected_invalid ||
-                    state === State.reloading
-                      ? theme.palette.text.disabled
-                      : theme.palette.text.primary
-                }}
+            {!(
+              state === State.idle ||
+              state === State.selected ||
+              state === State.collect_failed ||
+              state === State.collecting ||
+              state === State.reloading
+            ) && (
+              <Button
+                variant="text"
+                disabled={
+                  state === State.uploading ||
+                  state === State.stashing ||
+                  state === State.collected_invalid
+                }
+                onClick={() => handleOpenDialogButtonClick()}
               >
-                {state === State.idle ||
-                state === State.selected ||
-                state === State.collect_failed ||
-                state === State.collecting ||
-                state === State.reloading
-                  ? 'Reload Test Cases'
-                  : 'View Last Frame'}
-              </Typography>
-            </Button>
+                <Typography
+                  variant="underline"
+                  sx={{
+                    color:
+                      state === State.uploading ||
+                      state === State.stashing ||
+                      state === State.collected_invalid
+                        ? theme.palette.text.disabled
+                        : theme.palette.text.primary
+                  }}
+                >
+                  View Last Frame
+                </Typography>
+              </Button>
+            )}
           </div>
         </Controls>
       </Canvas>
