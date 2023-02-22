@@ -233,10 +233,9 @@ export const Landing = (props: any): JSX.Element => {
     }
   };
 
-  const handleStopButtonClick = async () => {
+  const handleStopButtonClick = () => {
     removeEvent();
     if (collectedData.length > 0) {
-      await readStaticConfig();
       props.setADCData(collectedData);
       dispatch('STOP_VALID');
     } else {
@@ -250,6 +249,7 @@ export const Landing = (props: any): JSX.Element => {
 
   const handleUploadButtonClick = async () => {
     dispatch('UPLOAD');
+    await readStaticConfig();
     try {
       await uploadAttachment(
         props.testCase.id,
