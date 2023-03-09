@@ -15,7 +15,7 @@ namespace Attributes {
   export const id = 'webds_data_collection_widget';
   export const label = 'Test Data Collection';
   export const caption = 'Test Data Collection';
-  export const category = 'Touch - Assessment';
+  export const category = 'Device - Assessment';
   export const rank = 40;
 }
 
