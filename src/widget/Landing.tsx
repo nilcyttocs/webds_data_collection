@@ -573,16 +573,22 @@ export const Landing = (props: any): JSX.Element => {
   };
 
   useEffect(() => {
-    const element = document.getElementById('webds_data_collection_test_list');
-    if (element && element.scrollHeight > element.clientHeight) {
-      setListRightPadding(8);
-    } else {
-      setListRightPadding(0);
+    if (state === State.reloading) {
+      dispatch('RELOADED');
     }
-    dispatch('RELOADED');
   }, [props.testCases]);
 
   useEffect(() => {
+    if (state === State.idle) {
+      const element = document.getElementById(
+        'webds_data_collection_test_list'
+      );
+      if (element && element.scrollHeight > element.clientHeight) {
+        setListRightPadding(8);
+      } else {
+        setListRightPadding(0);
+      }
+    }
     props.setState(state);
   }, [state]);
 
