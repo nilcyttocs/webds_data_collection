@@ -40,8 +40,6 @@ type StashedData = {
 
 export const ADCDataContext = React.createContext([] as ADCData);
 
-let alertMessage = '';
-
 let cancelDequeue = false;
 
 let suiteID: number;
@@ -252,7 +250,7 @@ const getTestCases = async (): Promise<any[]> => {
 
 export const DataCollectionComponent = (props: any): JSX.Element => {
   const [initialized, setInitialized] = useState<boolean>(false);
-  const [alert, setAlert] = useState<boolean>(false);
+  const [alert, setAlert] = useState<string | undefined>(undefined);
   const [page, setPage] = useState<Page>(Page.Landing);
   const [online, setOnline] = useState<boolean>(false);
   const [colsRows, setColsRows] = useState<[number, number]>([0, 0]);
@@ -268,11 +266,6 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
 
   const webdsTheme = webdsService.ui.getWebDSTheme();
 
-  const showAlert = (message: string) => {
-    alertMessage = message;
-    setAlert(true);
-  };
-
   const changePage = (newPage: Page) => {
     setPage(newPage);
   };
@@ -286,7 +279,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
       newTestCases = await updateTestCases();
     } catch (error) {
       console.error(error);
-      showAlert(ALERT_MESSAGE_RELOAD_TEST_CASES);
+      setAlert(ALERT_MESSAGE_RELOAD_TEST_CASES);
     } finally {
       setReloading(false);
       if (newTestCases !== undefined) {
@@ -302,6 +295,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
       case Page.Landing:
         return (
           <Landing
+            setAlert={setAlert}
             changePage={changePage}
             state={state}
             setState={setState}
@@ -316,6 +310,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
       case Page.Playback:
         return (
           <Playback
+            setAlert={setAlert}
             changePage={changePage}
             numCols={colsRows[0]}
             numRows={colsRows[1]}
@@ -408,7 +403,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
         }
       } catch (error) {
         console.error(`Error - POST /webds/command\n${dataToSend}\n${error}`);
-        showAlert(ALERT_MESSAGE_APP_INFO);
+        setAlert(ALERT_MESSAGE_APP_INFO);
         return;
       }
 
@@ -416,7 +411,7 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
       try {
         testCases = await getTestCases();
       } catch (error) {
-        showAlert(error as string);
+        setAlert(error as string);
         return;
       }
 
@@ -499,13 +494,13 @@ export const DataCollectionComponent = (props: any): JSX.Element => {
             </Dialog>
           ) : (
             <>
-              {alert && (
+              {alert !== undefined && (
                 <Alert
                   severity="error"
-                  onClose={() => setAlert(false)}
+                  onClose={() => setAlert(undefined)}
                   sx={{ whiteSpace: 'pre-wrap' }}
                 >
-                  {alertMessage}
+                  {alert}
                 </Alert>
               )}
               {initialized && (
