@@ -22,7 +22,7 @@ import {
 } from './constants';
 import Landing, { State } from './Landing';
 import { requestAPI, webdsService } from './local_exports';
-import { ProgressButton } from './mui_extensions/Button';
+import { ProgressButton } from './mui_extensions/Buttons';
 import Playback from './Playback';
 
 export enum Page {

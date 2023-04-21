@@ -8,7 +8,7 @@ import PlaybackSpeed from './playback_controls/PlaybackSpeed';
 
 import { Page } from './DataCollectionComponent';
 import { ADCDataContext } from './local_exports';
-import { PauseRunToggle, StopButton } from './mui_extensions/Button';
+import { PauseRunToggle, StopButton } from './mui_extensions/Buttons';
 import { Canvas } from './mui_extensions/Canvas';
 import { Content } from './mui_extensions/Content';
 import { Controls } from './mui_extensions/Controls';
